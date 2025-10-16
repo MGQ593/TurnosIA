@@ -93,9 +93,7 @@
       justify-content: center;
       flex-direction: column;
       height: 100vh;
-      background: radial-gradient(circle at top, rgba(59, 130, 246, 0.28), transparent 55%),
-                  linear-gradient(135deg, #0f172a, #1d4ed8 45%, #7c3aed);
-      background-attachment: fixed;
+      background: #02539A;
       text-align: center;
       padding: 40px 20px;
       font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
@@ -106,34 +104,6 @@
       bottom: 0;
       overflow: hidden;
     ">
-      <div style="
-        content: '';
-        position: absolute;
-        width: 440px;
-        height: 440px;
-        top: -140px;
-        right: -180px;
-        border-radius: 999px;
-        background: linear-gradient(135deg, rgba(37, 99, 235, 0.35), rgba(124, 58, 237, 0.35));
-        opacity: 0.55;
-        animation: float 14s ease-in-out infinite;
-        z-index: 0;
-      "></div>
-      <div style="
-        content: '';
-        position: absolute;
-        width: 320px;
-        height: 320px;
-        bottom: -120px;
-        left: -140px;
-        border-radius: 999px;
-        background: linear-gradient(135deg, rgba(37, 99, 235, 0.35), rgba(124, 58, 237, 0.35));
-        opacity: 0.55;
-        animation: float 14s ease-in-out infinite;
-        animation-delay: -6s;
-        z-index: 0;
-      "></div>
-      
       <div class="error-card" style="
         background: rgba(255, 255, 255, 0.96);
         backdrop-filter: blur(20px);
@@ -182,9 +152,7 @@
       justify-content: center;
       flex-direction: column;
       height: 100vh;
-      background: radial-gradient(circle at top, rgba(59, 130, 246, 0.28), transparent 55%),
-                  linear-gradient(135deg, #0f172a, #1d4ed8 45%, #7c3aed);
-      background-attachment: fixed;
+      background: #02539A;
       text-align: center;
       padding: 40px 20px;
       font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
@@ -195,33 +163,6 @@
       bottom: 0;
       overflow: hidden;
     ">
-      <div style="
-        content: '';
-        position: absolute;
-        width: 440px;
-        height: 440px;
-        top: -140px;
-        right: -180px;
-        border-radius: 999px;
-        background: linear-gradient(135deg, rgba(37, 99, 235, 0.35), rgba(124, 58, 237, 0.35));
-        opacity: 0.55;
-        animation: float 14s ease-in-out infinite;
-        z-index: 0;
-      "></div>
-      <div style="
-        content: '';
-        position: absolute;
-        width: 320px;
-        height: 320px;
-        bottom: -120px;
-        left: -140px;
-        border-radius: 999px;
-        background: linear-gradient(135deg, rgba(37, 99, 235, 0.35), rgba(124, 58, 237, 0.35));
-        opacity: 0.55;
-        animation: float 14s ease-in-out infinite;
-        animation-delay: -6s;
-        z-index: 0;
-      "></div>
       
       <img 
         src="${DEFAULT_LOGO_URL}" 
