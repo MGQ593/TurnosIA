@@ -10,10 +10,6 @@
   let notificacionesPushHabilitadas = false;
   const logoImg = document.getElementById("logoImg");
   const turnoDisplay = document.getElementById("turnoDisplay");
-  function obtenerParametroURL(nombre) {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get(nombre);
-  }
   async function cargarConfiguracion() {
     try {
       const respuesta = await fetch(PUBLIC_CONFIG_ENDPOINT, { cache: "no-store" });
@@ -432,8 +428,13 @@ Te atender\xE1: ${asesor}`,
   }
   (async function inicializar() {
     try {
+      let obtenerParametroURL2 = function(nombre) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(nombre);
+      };
+      var obtenerParametroURL = obtenerParametroURL2;
       await cargarConfiguracion();
-      const token = obtenerParametroURL("token");
+      const token = obtenerParametroURL2("token");
       if (!token) {
         console.warn("No se encontr\xF3 token en la URL");
         mostrarErrorToken("El enlace no es v\xE1lido o ha sido modificado. Por favor, solicita un nuevo turno.");
@@ -450,12 +451,14 @@ Te atender\xE1: ${asesor}`,
       }
       const activarAudio = tokenData.activarAudio ?? false;
       const activarPush = tokenData.activarPush ?? false;
-      const agenciaId = tokenData.agenciaId;
-      if (!agenciaId) {
-        throw new Error("Token inv\xE1lido: falta agenciaId");
+      const agenciaIdParam = obtenerParametroURL2("id_agencia");
+      const agenciaId = agenciaIdParam ? parseInt(agenciaIdParam) : void 0;
+      if (!agenciaId || isNaN(agenciaId)) {
+        console.error("\u274C URL inv\xE1lida: falta id_agencia");
+        throw new Error("URL inv\xE1lida: falta id_agencia");
       }
       console.log(`\u{1F4F1} Preferencias de notificaci\xF3n: Audio=${activarAudio}, Push=${activarPush}`);
-      console.log(`\u{1F3E2} Agencia ID: ${agenciaId}`);
+      console.log(`\u{1F3E2} Agencia ID (URL): ${agenciaId}`);
       if (activarAudio) {
         await inicializarAudio();
         console.log("\u2705 Audio activado autom\xE1ticamente por preferencias del usuario");

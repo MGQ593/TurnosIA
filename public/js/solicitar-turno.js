@@ -590,7 +590,6 @@
           body: JSON.stringify({
             turnoId: turnoData.data.numero_turno,
             // Usar numero_turno (T001) en lugar de turno_id (1)
-            agenciaId: turnoData.data.agencia_id,
             cedula: datos.cedula,
             celular: datos.celular,
             activarAudio,
@@ -599,7 +598,7 @@
         });
         if (tokenResponse.ok) {
           const tokenData = await tokenResponse.json();
-          window.location.replace("/confirmacion?token=" + tokenData.token);
+          window.location.replace(`/confirmacion?id_agencia=${encodeURIComponent(turnoData.data.agencia_id)}&token=${encodeURIComponent(tokenData.token)}`);
         } else {
           console.error("Error generando token de seguridad");
           mostrarAlerta("Turno creado, pero error generando token.", "warning");

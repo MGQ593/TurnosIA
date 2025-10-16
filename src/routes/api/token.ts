@@ -16,7 +16,7 @@ const router = Router();
  */
 router.post('/generar-token', (req: Request, res: Response) => {
   try {
-    const { turnoId, agenciaId, cedula, celular, activarAudio = false, activarPush = false } = req.body;
+    const { turnoId, cedula, celular, activarAudio = false, activarPush = false } = req.body;
 
     if (!turnoId) {
       return res.status(400).json({
@@ -25,14 +25,7 @@ router.post('/generar-token', (req: Request, res: Response) => {
       });
     }
 
-    if (!agenciaId) {
-      return res.status(400).json({
-        success: false,
-        message: 'El ID de la agencia es requerido'
-      });
-    }
-
-    const token = generarTokenTurno(turnoId, agenciaId, cedula, celular, activarAudio, activarPush);
+    const token = generarTokenTurno(turnoId, cedula, celular, activarAudio, activarPush);
 
     res.json({
       success: true,

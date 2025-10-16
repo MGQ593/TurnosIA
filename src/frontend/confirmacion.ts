@@ -648,14 +648,19 @@ function prevenirRetroceso(): void {
     // Auto-inicializar sistemas de notificación según preferencias del usuario
     const activarAudio = (tokenData as any).activarAudio ?? false;
     const activarPush = (tokenData as any).activarPush ?? false;
-    const agenciaId = (tokenData as any).agenciaId;
-    
-    if (!agenciaId) {
-      throw new Error('Token inválido: falta agenciaId');
+    // Extraer agenciaId de la URL
+    function obtenerParametroURL(nombre: string): string | null {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(nombre);
     }
-    
+    const agenciaIdParam = obtenerParametroURL('id_agencia');
+    const agenciaId = agenciaIdParam ? parseInt(agenciaIdParam) : undefined;
+    if (!agenciaId || isNaN(agenciaId)) {
+      console.error('❌ URL inválida: falta id_agencia');
+      throw new Error('URL inválida: falta id_agencia');
+    }
     console.log(`📱 Preferencias de notificación: Audio=${activarAudio}, Push=${activarPush}`);
-    console.log(`🏢 Agencia ID: ${agenciaId}`);
+    console.log(`🏢 Agencia ID (URL): ${agenciaId}`);
     
     if (activarAudio) {
       await inicializarAudio();

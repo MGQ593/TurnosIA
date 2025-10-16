@@ -162,8 +162,9 @@ router.post('/solicitar', async (req: Request, res: Response) => {
     const response: ApiResponse = {
       success: true,
       data: {
-        turno_id: turno.id,
-        numero_turno: turno.numero_turno,
+        turno_id: turno.id, // numérico, para referencia interna
+        numero_turno: turno.numero_turno, // string, para mostrar y para token
+        agencia_id: turno.agencia_id,
         fecha_hora: turno.fecha_hora,
         estado: turno.estado,
         codigo_qr: codigoQR,

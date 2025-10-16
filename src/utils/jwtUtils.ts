@@ -9,7 +9,6 @@ const EXPIRATION_MINUTES = parseInt(process.env.TURNO_EXPIRATION_MINUTES || '30'
 
 export interface TurnoTokenPayload {
   turnoId: string;
-  agenciaId: number;
   cedula?: string;
   celular?: string;
   activarAudio?: boolean;
@@ -23,7 +22,6 @@ export interface TurnoTokenPayload {
  */
 export function generarTokenTurno(
   turnoId: string,
-  agenciaId: number,
   cedula?: string, 
   celular?: string,
   activarAudio?: boolean,
@@ -31,7 +29,6 @@ export function generarTokenTurno(
 ): string {
   const payload: TurnoTokenPayload = {
     turnoId,
-    agenciaId,
     cedula,
     celular,
     activarAudio,
