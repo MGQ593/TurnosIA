@@ -14,7 +14,8 @@ const solicitarTurnoSchema = z.object({
     identificacion: z.string().min(1, 'Identificación es requerida'),
     celular: z.string().min(10, 'Celular debe tener al menos 10 dígitos')
   }),
-  agencia_id: z.number().int().positive('ID de agencia debe ser positivo')
+  agencia_id: z.number().int().positive('ID de agencia debe ser positivo'),
+  whatsapp_validado: z.boolean().optional() // Estado de validación de WhatsApp
 });
 
 /**
@@ -77,7 +78,10 @@ router.post('/solicitar', async (req: Request, res: Response) => {
       return res.status(400).json(response);
     }
 
-    const { cliente: datosCliente, agencia_id } = validationResult.data;
+    const { cliente: datosCliente, agencia_id, whatsapp_validado } = validationResult.data;
+
+    // Log del estado de validación de WhatsApp
+    console.log('📱 WhatsApp validado:', whatsapp_validado === true ? 'Sí ✅' : whatsapp_validado === false ? 'No ❌' : 'No verificado ⚠️');
 
     // Verificar si el cliente ya existe
     let cliente = await ClientesQueries.obtenerPorIdentificacion(datosCliente.identificacion);
@@ -143,7 +147,8 @@ router.post('/solicitar', async (req: Request, res: Response) => {
         telefono: datosCliente.celular,
         sucursal: agencia.nombre,
         sucursal_id: agencia_id,
-        fecha_hora: turno.fecha_hora
+        fecha_hora: turno.fecha_hora,
+        whatsapp_validado: whatsapp_validado ?? false // false si no se validó
       });
 
       if (webhookResult.success) {

@@ -10,6 +10,7 @@ interface TurnoWebhookData {
   sucursal: string;
   sucursal_id: number;
   fecha_hora: Date;
+  whatsapp_validado: boolean; // Indica si el número tiene WhatsApp activo
 }
 
 interface WebhookResult {

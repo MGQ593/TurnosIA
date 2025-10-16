@@ -813,7 +813,8 @@ form.addEventListener('submit', async function (event) {
                                        datos.cedula.length === 10 ? 'cedula' : 'pasaporte',
                     celular: datos.celular
                 },
-                agencia_id: agenciaId
+                agencia_id: agenciaId,
+                whatsapp_validado: validacionWhatsApp.whatsappActivo === true // true si está activo, false si no
             })
         });
 

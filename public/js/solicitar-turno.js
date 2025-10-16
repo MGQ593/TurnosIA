@@ -594,7 +594,9 @@
             tipo_identificacion: datos.cedula.length === 13 ? "ruc" : datos.cedula.length === 10 ? "cedula" : "pasaporte",
             celular: datos.celular
           },
-          agencia_id: agenciaId
+          agencia_id: agenciaId,
+          whatsapp_validado: validacionWhatsApp.whatsappActivo === true
+          // true si está activo, false si no
         })
       });
       if (!turnoResponse.ok) {
