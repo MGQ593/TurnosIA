@@ -590,6 +590,7 @@
           body: JSON.stringify({
             turnoId: turnoData.data.numero_turno,
             // Usar numero_turno (T001) en lugar de turno_id (1)
+            agenciaId: turnoData.data.agencia_id,
             cedula: datos.cedula,
             celular: datos.celular,
             activarAudio,

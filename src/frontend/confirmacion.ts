@@ -512,14 +512,14 @@ function enviarNotificacionPush(titulo: string, opciones: NotificationOptions): 
 /**
  * Consulta el estado de asignación del turno (polling)
  */
-async function verificarAsignacionTurno(numeroTurno: string): Promise<void> {
-  console.log(`🔄 Iniciando polling para turno: ${numeroTurno}`);
+async function verificarAsignacionTurno(numeroTurno: string, agenciaId: number): Promise<void> {
+  console.log(`🔄 Iniciando polling para turno: ${numeroTurno} de agencia ${agenciaId}`);
   
   const intervalo = setInterval(async () => {
     try {
-      console.log(`🔍 Consultando estado del turno ${numeroTurno}...`);
+      console.log(`🔍 Consultando estado del turno ${numeroTurno} de agencia ${agenciaId}...`);
       
-      const response = await fetch(`/api/turnos/estado/${encodeURIComponent(numeroTurno)}`);
+      const response = await fetch(`/api/turnos/estado/${encodeURIComponent(numeroTurno)}?agenciaId=${agenciaId}`);
       const data: ApiResponse<{
         asignado: boolean;
         modulo?: string;
@@ -648,8 +648,14 @@ function prevenirRetroceso(): void {
     // Auto-inicializar sistemas de notificación según preferencias del usuario
     const activarAudio = (tokenData as any).activarAudio ?? false;
     const activarPush = (tokenData as any).activarPush ?? false;
+    const agenciaId = (tokenData as any).agenciaId;
+    
+    if (!agenciaId) {
+      throw new Error('Token inválido: falta agenciaId');
+    }
     
     console.log(`📱 Preferencias de notificación: Audio=${activarAudio}, Push=${activarPush}`);
+    console.log(`🏢 Agencia ID: ${agenciaId}`);
     
     if (activarAudio) {
       await inicializarAudio();
@@ -667,7 +673,7 @@ function prevenirRetroceso(): void {
     }
     
     // Iniciar polling para verificar asignación
-    verificarAsignacionTurno(tokenData.turnoId);
+    verificarAsignacionTurno(tokenData.turnoId, agenciaId);
     
     // Prevenir retroceso
     prevenirRetroceso();

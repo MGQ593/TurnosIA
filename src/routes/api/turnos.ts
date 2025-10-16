@@ -307,14 +307,24 @@ router.get('/agencia/:id', async (req: Request, res: Response) => {
 /**
  * GET /api/turnos/estado/:numero
  * Consulta el estado de asignación de un turno
+ * Requiere agenciaId como query param para evitar colisiones entre agencias
  */
 router.get('/estado/:numero', async (req: Request, res: Response) => {
   try {
     const { numero } = req.params;
+    const agenciaId = parseInt(req.query.agenciaId as string);
     
-    console.log(`🔍 Consultando estado del turno: ${numero}`);
+    if (!agenciaId || isNaN(agenciaId)) {
+      const response: ApiResponse = {
+        success: false,
+        message: 'El ID de la agencia es requerido'
+      };
+      return res.status(400).json(response);
+    }
     
-    const estado = await TurnosQueries.obtenerEstadoAsignacion(numero);
+    console.log(`🔍 Consultando estado del turno: ${numero} de agencia ${agenciaId}`);
+    
+    const estado = await TurnosQueries.obtenerEstadoAsignacion(numero, agenciaId);
     
     if (!estado) {
       const response: ApiResponse = {

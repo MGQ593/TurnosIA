@@ -43,9 +43,7 @@
             justify-content: center;
             padding: 40px 24px;
             color: var(--text-strong);
-            background:
-                radial-gradient(circle at top, rgba(59, 130, 246, 0.28), transparent 55%),
-                linear-gradient(135deg, var(--gradient-a), var(--gradient-b) 45%, var(--gradient-c));
+            background: #02539A;
             background-attachment: fixed;
             position: relative;
             overflow-x: hidden;
@@ -53,28 +51,7 @@
 
         body::before,
         body::after {
-            content: "";
-            position: absolute;
-            border-radius: 999px;
-            background: linear-gradient(135deg, rgba(37, 99, 235, 0.35), rgba(124, 58, 237, 0.35));
-            opacity: 0.55;
-            animation: float 14s ease-in-out infinite;
-            z-index: 0;
-        }
-
-        body::before {
-            width: 440px;
-            height: 440px;
-            top: -140px;
-            right: -180px;
-        }
-
-        body::after {
-            width: 320px;
-            height: 320px;
-            bottom: -120px;
-            left: -140px;
-            animation-delay: -6s;
+            display: none;
         }
 
         .page-wrapper {

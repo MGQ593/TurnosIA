@@ -248,11 +248,12 @@ export class ClientesQueries {
 export class TurnosQueries {
 
   /**
-   * Obtiene el estado de asignación de un turno por su número
+   * Obtiene el estado de asignación de un turno por su número y agencia
    * Solo considera asignado si el estado es 'llamado' (no 'pendiente')
    * Esto evita que turnos antiguos ya procesados se detecten como recién asignados
+   * IMPORTANTE: Debe filtrar por agencia_id para evitar colisiones con turnos del mismo número en otras agencias
    */
-  static async obtenerEstadoAsignacion(numeroTurno: string): Promise<{
+  static async obtenerEstadoAsignacion(numeroTurno: string, agenciaId: number): Promise<{
     asignado: boolean;
     modulo?: string;
     asesor?: string;
@@ -261,8 +262,8 @@ export class TurnosQueries {
     const result = await query(`
       SELECT estado, modulo, asesor, fecha_asignacion
       FROM turnos_ia.turnos
-      WHERE numero_turno = $1
-    `, [numeroTurno]);
+      WHERE numero_turno = $1 AND agencia_id = $2
+    `, [numeroTurno, agenciaId]);
 
     if (result.rows.length === 0) {
       return null;

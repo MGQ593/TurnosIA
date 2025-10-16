@@ -362,12 +362,12 @@
       console.error("\u274C Error enviando notificaci\xF3n push:", error);
     }
   }
-  async function verificarAsignacionTurno(numeroTurno) {
-    console.log(`\u{1F504} Iniciando polling para turno: ${numeroTurno}`);
+  async function verificarAsignacionTurno(numeroTurno, agenciaId) {
+    console.log(`\u{1F504} Iniciando polling para turno: ${numeroTurno} de agencia ${agenciaId}`);
     const intervalo = setInterval(async () => {
       try {
-        console.log(`\u{1F50D} Consultando estado del turno ${numeroTurno}...`);
-        const response = await fetch(`/api/turnos/estado/${encodeURIComponent(numeroTurno)}`);
+        console.log(`\u{1F50D} Consultando estado del turno ${numeroTurno} de agencia ${agenciaId}...`);
+        const response = await fetch(`/api/turnos/estado/${encodeURIComponent(numeroTurno)}?agenciaId=${agenciaId}`);
         const data = await response.json();
         if (data.success && data.data?.asignado) {
           clearInterval(intervalo);
@@ -450,7 +450,12 @@ Te atender\xE1: ${asesor}`,
       }
       const activarAudio = tokenData.activarAudio ?? false;
       const activarPush = tokenData.activarPush ?? false;
+      const agenciaId = tokenData.agenciaId;
+      if (!agenciaId) {
+        throw new Error("Token inv\xE1lido: falta agenciaId");
+      }
       console.log(`\u{1F4F1} Preferencias de notificaci\xF3n: Audio=${activarAudio}, Push=${activarPush}`);
+      console.log(`\u{1F3E2} Agencia ID: ${agenciaId}`);
       if (activarAudio) {
         await inicializarAudio();
         console.log("\u2705 Audio activado autom\xE1ticamente por preferencias del usuario");
@@ -464,7 +469,7 @@ Te atender\xE1: ${asesor}`,
       } else {
         console.log("\u2139\uFE0F Push notifications desactivadas seg\xFAn preferencias del usuario");
       }
-      verificarAsignacionTurno(tokenData.turnoId);
+      verificarAsignacionTurno(tokenData.turnoId, agenciaId);
       prevenirRetroceso();
     } catch (error) {
       console.error("\u274C Error en inicializaci\xF3n:", error);
