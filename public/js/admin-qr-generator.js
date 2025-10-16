@@ -6,6 +6,7 @@
   let qrGeneratedCount = 0;
   let sessionStartTime = Date.now();
   let sessionTimeInterval = null;
+  let agencias = [];
   const logoImg = document.getElementById("logoImg");
   const adminUsername = document.getElementById("adminUsername");
   const errorMessage = document.getElementById("errorMessage");
@@ -61,16 +62,56 @@
       console.error("Error cargando configuraci\xF3n:", error);
     }
   }
+  async function cargarAgencias() {
+    try {
+      const response = await fetch("/api/turnos/agencias");
+      const data = await response.json();
+      if (data.success && data.data) {
+        agencias = data.data;
+        const selectAgencia = document.getElementById("selectAgencia");
+        if (selectAgencia) {
+          selectAgencia.innerHTML = '<option value="">Selecciona una agencia</option>';
+          agencias.forEach((agencia) => {
+            const option = document.createElement("option");
+            option.value = agencia.id.toString();
+            option.textContent = `${agencia.nombre} (${agencia.codigo})`;
+            selectAgencia.appendChild(option);
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error cargando agencias:", error);
+      mostrarError("Error al cargar las agencias");
+    }
+  }
   async function generarNuevoQR() {
     try {
       mostrarError("");
+      const selectAgencia = document.getElementById("selectAgencia");
+      if (!selectAgencia || !selectAgencia.value) {
+        mostrarError("Por favor selecciona una agencia");
+        return;
+      }
+      const agenciaId = parseInt(selectAgencia.value);
       if (typeof qrcode === "undefined") {
         throw new Error("Librer\xEDa qrcode no est\xE1 cargada. Verifica tu conexi\xF3n a internet.");
       }
+      const response = await fetch("/api/token/generar-acceso", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ agenciaId })
+      });
+      const data = await response.json();
+      if (!data.success || !data.data?.token) {
+        throw new Error(data.message || "Error al generar el token");
+      }
+      const token = data.data.token;
+      currentAccessToken = token;
       const baseUrl = window.location.origin;
-      const qrUrl = `${baseUrl}/solicitar-turno`;
-      console.log("\u{1F4F1} Generando QR PERMANENTE para URL:", qrUrl);
-      currentAccessToken = "PERMANENTE";
+      const qrUrl = `${baseUrl}/solicitar-turno.html?id_agencia=${agenciaId}&access=${token}`;
+      console.log("\u{1F4F1} Generando QR para agencia", agenciaId, "- URL:", qrUrl);
       const qr = qrcode(0, "M");
       qr.addData(qrUrl);
       qr.make();
@@ -167,7 +208,11 @@
       const sesionValida = await verificarSesion();
       if (!sesionValida) return;
       await cargarConfiguracion();
-      await generarNuevoQR();
+      await cargarAgencias();
+      const btnGenerar = document.querySelector(".btn-primary");
+      if (btnGenerar) {
+        btnGenerar.style.display = "flex";
+      }
       actualizarTiempoSesion();
       console.log("\u{1F512} Panel de admin inicializado correctamente");
     } catch (error) {

@@ -399,24 +399,32 @@
 
         <div class="error-message" id="errorMessage"></div>
 
+        <div style="margin-bottom: 24px;">
+            <label for="selectAgencia" style="display: block; font-weight: 600; color: #1e293b; margin-bottom: 8px; font-size: 14px;">
+                🏢 Seleccionar Agencia:
+            </label>
+            <select id="selectAgencia" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 15px; background: white; color: #1e293b; cursor: pointer; transition: all 0.2s; outline: none;">
+                <option value="">Cargando agencias...</option>
+            </select>
+        </div>
+
         <div class="qr-container">
             <canvas id="qrCanvas"></canvas>
             <div class="qr-info">
-                <strong>✅ Este QR es PERMANENTE</strong><br>
-                Puede ser impreso o mostrado en pantalla indefinidamente.<br>
-                Los tokens de acceso se generan automáticamente al escanearlo.
+                <strong>✅ QR Generado</strong><br>
+                Escanea este código para acceder al formulario de turnos de la agencia seleccionada.
             </div>
         </div>
 
         <div class="token-expiry" style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-color: #22c55e;">
-            <div class="token-expiry-title" style="color: #166534;">♾️ QR PERMANENTE</div>
-            <div class="token-expiry-time" style="color: #15803d; font-size: 16px;">No expira - Puede imprimirse</div>
+            <div class="token-expiry-title" style="color: #166534;">✅ QR con Token de Acceso</div>
+            <div class="token-expiry-time" style="color: #15803d; font-size: 16px;">Token incluido en la URL</div>
         </div>
 
         <div class="button-group">
-            <button class="btn btn-primary" onclick="generarNuevoQR()" style="display:none;">
+            <button class="btn btn-primary" onclick="generarNuevoQR()" style="display:none; align-items:center; justify-content:center;">
                 <span>🔄</span>
-                <span>Generar Nuevo QR</span>
+                <span>Generar QR</span>
             </button>
             <button class="btn btn-secondary" onclick="descargarQR()">
                 <span>💾</span>

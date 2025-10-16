@@ -13,6 +13,12 @@ interface SesionVerificationResponse {
   username?: string;
 }
 
+interface Agencia {
+  id: number;
+  nombre: string;
+  codigo: string;
+}
+
 // Declaración para la librería qrcode (cargada vía CDN)
 declare const qrcode: any;
 
@@ -25,6 +31,7 @@ let countdownInterval: number | null = null;
 let qrGeneratedCount = 0;
 let sessionStartTime = Date.now();
 let sessionTimeInterval: number | null = null;
+let agencias: Agencia[] = [];
 
 // ==========================================
 // Elementos del DOM
@@ -106,30 +113,82 @@ async function cargarConfiguracion(): Promise<void> {
   }
 }
 
+/**
+ * Carga la lista de agencias desde el API
+ */
+async function cargarAgencias(): Promise<void> {
+  try {
+    const response = await fetch('/api/turnos/agencias');
+    const data: ApiResponse<Agencia[]> = await response.json();
+    
+    if (data.success && data.data) {
+      agencias = data.data;
+      const selectAgencia = document.getElementById('selectAgencia') as HTMLSelectElement;
+      
+      if (selectAgencia) {
+        selectAgencia.innerHTML = '<option value="">Selecciona una agencia</option>';
+        agencias.forEach(agencia => {
+          const option = document.createElement('option');
+          option.value = agencia.id.toString();
+          option.textContent = `${agencia.nombre} (${agencia.codigo})`;
+          selectAgencia.appendChild(option);
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error cargando agencias:', error);
+    mostrarError('Error al cargar las agencias');
+  }
+}
+
 // ==========================================
 // Funciones de Generación QR
 // ==========================================
 
 /**
- * Genera un nuevo código QR permanente
+ * Genera un nuevo código QR con token de acceso y agencia
  */
 async function generarNuevoQR(): Promise<void> {
   try {
     mostrarError(''); // Limpiar errores previos
+
+    // Obtener agencia seleccionada
+    const selectAgencia = document.getElementById('selectAgencia') as HTMLSelectElement;
+    if (!selectAgencia || !selectAgencia.value) {
+      mostrarError('Por favor selecciona una agencia');
+      return;
+    }
+
+    const agenciaId = parseInt(selectAgencia.value);
 
     // Verificar que la librería qrcode esté cargada
     if (typeof qrcode === 'undefined') {
       throw new Error('Librería qrcode no está cargada. Verifica tu conexión a internet.');
     }
 
-    // ⭐ URL PERMANENTE - No incluye token, se genera automáticamente
-    const baseUrl = window.location.origin;
-    const qrUrl = `${baseUrl}/solicitar-turno`;
+    // Generar token de acceso desde el API
+    const response = await fetch('/api/token/generar-acceso', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ agenciaId })
+    });
 
-    console.log('📱 Generando QR PERMANENTE para URL:', qrUrl);
-    
-    // El QR apunta a una URL permanente que genera el token automáticamente
-    currentAccessToken = 'PERMANENTE';
+    const data: ApiResponse<{ token: string }> = await response.json();
+
+    if (!data.success || !data.data?.token) {
+      throw new Error(data.message || 'Error al generar el token');
+    }
+
+    const token = data.data.token;
+    currentAccessToken = token;
+
+    // Construir URL con token y agencia
+    const baseUrl = window.location.origin;
+    const qrUrl = `${baseUrl}/solicitar-turno.html?id_agencia=${agenciaId}&access=${token}`;
+
+    console.log('📱 Generando QR para agencia', agenciaId, '- URL:', qrUrl);
 
     // Generar QR usando qrcode-generator
     const qr = qrcode(0, 'M');
@@ -280,8 +339,14 @@ async function inicializar(): Promise<void> {
     // Cargar configuración
     await cargarConfiguracion();
 
-    // Generar primer QR automáticamente
-    await generarNuevoQR();
+    // Cargar agencias
+    await cargarAgencias();
+
+    // Mostrar botón de generar QR (ahora que tenemos las agencias cargadas)
+    const btnGenerar = document.querySelector('.btn-primary') as HTMLButtonElement;
+    if (btnGenerar) {
+      btnGenerar.style.display = 'flex';
+    }
 
     // Iniciar contador de tiempo de sesión
     actualizarTiempoSesion();
