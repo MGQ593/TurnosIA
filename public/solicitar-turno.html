@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Sistema de Turnos - Solicitud</title>
+    <link rel="stylesheet" href="/css/solicitar-turno.css?v=1.0.0">
+</head>
+<body>
+    <div class="page-wrapper">
+        <header class="header">
+            <img id="brandLogo" class="brand-logo" src="https://www.chevyplan.com.ec/wp-content/uploads/2025/10/wb_chevyplan_logo-financiamiento-w_v5.webp" alt="Logo Chevyplan">
+            <span class="header-badge">Turnos en línea</span>
+            <h1>Solicitar turno</h1>
+            <div id="agenciaInfo" class="agencia-info" style="display: none;">
+                <span class="agencia-icon">📍</span>
+                <span id="agenciaNombre" class="agencia-nombre"></span>
+            </div>
+        </header>
+
+        <div class="cards-container">
+            <div id="formShell" class="form-shell card fade-panel visible">
+                <div id="alertContainer" class="alert-stack"></div>
+
+                <form id="turnoForm" autocomplete="on">
+                    <div class="form-group">
+                        <label for="celular">Número de celular</label>
+                        <input 
+                            type="tel" 
+                            id="celular" 
+                            name="celular" 
+                            placeholder="3001234567" 
+                            inputmode="tel"
+                            aria-describedby="celular-helper"
+                            aria-required="true"
+                            required>
+                        <small id="celular-helper" class="helper-text">Usaremos este número para confirmaciones y recordatorios.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cedula">Número de identificación (Cédula, RUC o Pasaporte)</label>
+                        <input 
+                            type="text" 
+                            id="cedula" 
+                            name="cedula" 
+                            placeholder="1234567890 o 1234567890001 o AB123456" 
+                            inputmode="text" 
+                            aria-describedby="cedula-helper"
+                            aria-required="true"
+                            required>
+                        <small id="cedula-helper" class="helper-text">Cédula: 10 dígitos | RUC: cédula + 001 | Pasaporte: alfanumérico</small>
+                    </div>
+
+                    <div class="form-group consent-box">
+                        <label class="consent-wrapper">
+                            <input 
+                                type="checkbox" 
+                                id="aceptoTerminos" 
+                                name="aceptoTerminos"
+                                aria-label="Autorización de tratamiento de datos personales"
+                                aria-required="true"
+                                required>
+                            <span>
+                                Confirmo que autorizo el tratamiento de mis datos personales para gestionar turnos y notificaciones asociadas.
+                            </span>
+                        </label>
+                    </div>
+
+                    <div class="form-group consent-box" style="margin-top: 16px; padding: 16px; background: rgba(37, 99, 235, 0.05); border-radius: 12px; border: 1px solid rgba(37, 99, 235, 0.15);">
+                        <div style="margin-bottom: 12px; font-size: 14px; font-weight: 600; color: #1e293b;">
+                            🔔 Preferencias de Notificaciones
+                        </div>
+                        <label class="consent-wrapper" style="margin-bottom: 8px;">
+                            <input 
+                                type="checkbox" 
+                                id="activarAudio" 
+                                name="activarAudio"
+                                checked
+                                aria-label="Activar notificaciones de audio">
+                            <span style="font-size: 14px;">
+                                🔊 Activar sonido de notificación
+                            </span>
+                        </label>
+                        <label class="consent-wrapper">
+                            <input 
+                                type="checkbox" 
+                                id="activarPush" 
+                                name="activarPush"
+                                checked
+                                aria-label="Activar notificaciones push">
+                            <span style="font-size: 14px;">
+                                📱 Activar notificaciones push del navegador
+                            </span>
+                        </label>
+                        <p style="font-size: 12px; color: #64748b; margin: 8px 0 0 28px; line-height: 1.4;">
+                            Te notificaremos cuando tu turno sea asignado a un módulo
+                        </p>
+                    </div>
+
+                    <button type="submit" class="btn" id="submitBtn">Solicitar turno</button>
+                </form>
+
+                <div id="loading" class="loader-overlay" role="status" aria-live="polite">
+                    <div class="loader-content">
+                        <span class="loader-spinner"></span>
+                        <span>Procesando solicitud...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="successMessage" class="success-card card fade-panel hidden" role="status" aria-live="polite">
+                <div class="success-emblem" aria-hidden="true">✓</div>
+                <h3>Solicitud enviada</h3>
+                <p id="successDescription">Tu solicitud se recibió correctamente. Te contactaremos por WhatsApp en breve.</p>
+                <div id="turnoIdMensaje" style="margin: 20px 0; padding: 16px; background: rgba(99, 102, 241, 0.08); border-radius: 12px;">
+                    <p style="font-size: 15px; color: var(--text-mid); margin-bottom: 8px;">Número de turno generado:</p>
+                    <p style="font-size: 28px; font-weight: 700; color: var(--accent-alt); letter-spacing: 1px;" id="turnoId"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/solicitar-turno.js?v=1.0.0"></script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+# Ignorar archivos de configuración local
+.env
+.env.local
+.env.*.local
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build
+dist/
+*.tsbuildinfo
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Temporal
+*.tmp
+*.temp
+.cache/
+
+# Testing
+coverage/
+
+# PM2
+.pm2/
+
+# Docker
+docker-compose.override.yml

@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turno Confirmado - ChevyPlan</title>
+    <style>
+        :root {
+            --gradient-a: #0f172a;
+            --gradient-b: #1d4ed8;
+            --gradient-c: #7c3aed;
+            --glass-bg: rgba(255, 255, 255, 0.96);
+            --glass-border: rgba(148, 163, 184, 0.35);
+            --text-strong: #0f172a;
+            --text-mid: #475569;
+            --text-soft: #64748b;
+            --accent-main: #2563eb;
+            --accent-alt: #7c3aed;
+            --success: #16a34a;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --shadow-card: 0 24px 48px rgba(15, 23, 42, 0.25);
+        }
+
+        html {
+            height: 100%;
+        }
+        
+        body {
+            min-height: 100%;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 24px;
+            color: var(--text-strong);
+            background:
+                radial-gradient(circle at top, rgba(59, 130, 246, 0.28), transparent 55%),
+                linear-gradient(135deg, var(--gradient-a), var(--gradient-b) 45%, var(--gradient-c));
+            background-attachment: fixed;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before,
+        body::after {
+            content: "";
+            position: absolute;
+            border-radius: 999px;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.35), rgba(124, 58, 237, 0.35));
+            opacity: 0.55;
+            animation: float 14s ease-in-out infinite;
+            z-index: 0;
+        }
+
+        body::before {
+            width: 440px;
+            height: 440px;
+            top: -140px;
+            right: -180px;
+        }
+
+        body::after {
+            width: 320px;
+            height: 320px;
+            bottom: -120px;
+            left: -140px;
+            animation-delay: -6s;
+        }
+
+        .page-wrapper {
+            width: 100%;
+            max-width: 520px;
+            position: relative;
+            z-index: 1;
+            padding: 20px 0;
+        }
+
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-card);
+            padding: 48px 40px;
+            text-align: center;
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        .success-emblem {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            border-radius: 999px;
+            background: rgba(34, 197, 94, 0.16);
+            color: var(--success);
+            display: grid;
+            place-items: center;
+            font-size: 36px;
+            font-weight: 700;
+            animation: pulse 1.8s ease-in-out infinite;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 16px;
+            color: var(--text-strong);
+        }
+
+        .description {
+            color: var(--text-mid);
+            margin-bottom: 24px;
+            line-height: 1.6;
+            font-size: 16px;
+        }
+
+        .turno-box {
+            margin: 28px 0;
+            padding: 20px;
+            background: rgba(99, 102, 241, 0.08);
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .turno-label {
+            font-size: 14px;
+            color: var(--text-soft);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .turno-id {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--accent-alt);
+            letter-spacing: 2px;
+        }
+
+        .footer-text {
+            font-size: 14px;
+            color: var(--text-soft);
+            margin-top: 24px;
+        }
+
+        .asignacion-info {
+            margin-top: 32px;
+            padding: 24px;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(124, 58, 237, 0.08));
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(37, 99, 235, 0.2);
+            animation: slideIn 0.5s ease forwards;
+        }
+
+        .asignacion-info h3 {
+            font-size: 18px;
+            color: var(--accent-main);
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+
+        .asignacion-detalle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .asignacion-detalle:last-child {
+            margin-bottom: 0;
+        }
+
+        .asignacion-detalle strong {
+            color: var(--text-strong);
+            font-weight: 600;
+        }
+
+        .asignacion-detalle span {
+            color: var(--text-mid);
+        }
+
+        @keyframes slideIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(16px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+
+        .logo {
+            max-width: 220px;
+            height: auto;
+            margin: 0 auto 32px;
+            display: block;
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+            animation: fadeIn 0.8s ease forwards;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.25);
+            }
+            50% {
+                transform: scale(1.04);
+                box-shadow: 0 0 0 16px rgba(34, 197, 94, 0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate3d(0, 0, 0); }
+            50% { transform: translate3d(0, 18px, 0); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                padding: 20px 16px;
+            }
+
+            .logo {
+                max-width: 200px;
+            }
+
+            .card {
+                padding: 40px 32px;
+            }
+
+            h1 {
+                font-size: 26px;
+            }
+        }
+
+        @media (max-width: 540px) {
+            body {
+                padding: 16px 12px;
+            }
+
+            .logo {
+                max-width: 180px;
+                margin-bottom: 24px;
+            }
+
+            .card {
+                padding: 32px 24px;
+                border-radius: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .turno-id {
+                font-size: 28px;
+            }
+
+            .description {
+                font-size: 15px;
+            }
+
+            .success-emblem {
+                width: 70px;
+                height: 70px;
+                font-size: 32px;
+            }
+        }
+
+        @media (max-width: 375px) {
+            body {
+                padding: 12px 8px;
+            }
+
+            .card {
+                padding: 24px 18px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .logo {
+                max-width: 160px;
+            }
+        }
+
+        /* Touch targets para móviles */
+        @media (hover: none) and (pointer: coarse) {
+            .turno-box {
+                min-height: 80px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-wrapper">
+        <img 
+            id="logoImg"
+            src="https://www.chevyplan.com.ec/wp-content/uploads/2025/10/wb_chevyplan_logo-financiamiento-w_v5.webp" 
+            alt="ChevyPlan Logo" 
+            class="logo"
+        >
+        <div class="card">
+            <div class="success-emblem" aria-hidden="true">✓</div>
+            <h1>¡Turno Confirmado!</h1>
+            <p class="description">Tu solicitud se recibió correctamente. Te contactaremos por WhatsApp en breve.</p>
+            
+            <div class="turno-box">
+                <div class="turno-label">Número de Turno</div>
+                <div class="turno-id" id="turnoDisplay">-</div>
+            </div>
+
+            <!-- Información de asignación (oculta hasta que se asigne) -->
+            <div id="asignacion-info" class="asignacion-info" style="display: none;">
+                <h3>🏢 Información de Atención</h3>
+                <div class="asignacion-detalle">
+                    <span>📍 <strong>Módulo:</strong></span>
+                    <span id="modulo">-</span>
+                </div>
+                <div class="asignacion-detalle">
+                    <span>👤 <strong>Asesor:</strong></span>
+                    <span id="asesor">-</span>
+                </div>
+            </div>
+
+            <p class="footer-text">Por favor, conserva este número para tu atención.</p>
+        </div>
+    </div>
+
+    <script src="/js/confirmacion.js"></script>
+</body>
+</html>
