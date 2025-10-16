@@ -427,7 +427,14 @@ async function validarWhatsApp(celular) {
             return { valido: true, advertencia: true };
         }
 
-        const numeroLimpio = celular.replace(/[\s\-\(\)]/g, '');
+        // Limpiar el número y eliminar el 0 después del código de país
+        let numeroLimpio = celular.replace(/[\s\-\(\)]/g, '');
+        
+        // Si el número empieza con 0, quitarlo (ej: 0981314280 → 981314280)
+        if (numeroLimpio.startsWith('0')) {
+            numeroLimpio = numeroLimpio.substring(1);
+        }
+        
         const numeroConPais = '593' + numeroLimpio;
 
         console.log('🔍 Validando WhatsApp para:', numeroConPais);
@@ -458,12 +465,14 @@ async function validarWhatsApp(celular) {
             // jid existe en la respuesta incluso cuando exists=false, por eso NO lo usamos
             if (numeroValidado.exists === true) {
                 console.log('✅ Número con WhatsApp confirmado');
-                return { valido: true, numeroWhatsApp: numeroConPais };
+                return { valido: true, whatsappActivo: true, numeroWhatsApp: numeroConPais };
             } else {
-                console.log('❌ Número sin WhatsApp detectado');
+                console.log('⚠️ Número sin WhatsApp detectado - Continuando con advertencia visual');
                 return { 
-                    valido: false, 
-                    mensaje: 'El número de celular no tiene WhatsApp activo. Por favor ingresa un número válido con WhatsApp.'
+                    valido: true, // NO bloqueamos, solo advertimos
+                    whatsappActivo: false,
+                    advertencia: true,
+                    mensaje: 'Este número no tiene WhatsApp activo'
                 };
             }
         }
@@ -760,19 +769,27 @@ form.addEventListener('submit', async function (event) {
     
     const validacionWhatsApp = await validarWhatsApp(datos.celular);
     
-    if (!validacionWhatsApp.valido) {
-        mostrarAlerta(validacionWhatsApp.mensaje || 'El número no tiene WhatsApp activo.', 'error');
-        if (celularInput) celularInput.classList.add('error');
-        setProcessing(false);
-        return;
+    // Aplicar estilos visuales según el resultado de la validación
+    if (celularInput) {
+        celularInput.classList.remove('error', 'success');
+        
+        if (validacionWhatsApp.whatsappActivo === true) {
+            // Número válido con WhatsApp activo - borde verde
+            celularInput.classList.add('success');
+            console.log('✅ WhatsApp activo - borde verde');
+        } else if (validacionWhatsApp.whatsappActivo === false) {
+            // Número sin WhatsApp - borde rojo pero NO bloqueamos
+            celularInput.classList.add('error');
+            console.warn('⚠️ WhatsApp no activo - borde rojo (continuando de todas formas)');
+        }
     }
 
-    if (validacionWhatsApp.advertencia) {
-        console.warn('⚠️ Continuando sin validación estricta de WhatsApp');
+    // Mostrar advertencia si el número no tiene WhatsApp, pero continuar
+    if (validacionWhatsApp.advertencia && validacionWhatsApp.mensaje) {
+        mostrarAlerta(validacionWhatsApp.mensaje, 'warning');
     }
 
     if (cedulaInput) cedulaInput.classList.add('success');
-    if (celularInput) celularInput.classList.add('success');
 
     lastSubmitTime = now;
 

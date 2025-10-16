@@ -330,7 +330,10 @@
         console.warn("\u26A0\uFE0F WhatsApp API no configurada, omitiendo validaci\xF3n");
         return { valido: true, advertencia: true };
       }
-      const numeroLimpio = celular.replace(/[\s\-\(\)]/g, "");
+      let numeroLimpio = celular.replace(/[\s\-\(\)]/g, "");
+      if (numeroLimpio.startsWith("0")) {
+        numeroLimpio = numeroLimpio.substring(1);
+      }
       const numeroConPais = "593" + numeroLimpio;
       console.log("\u{1F50D} Validando WhatsApp para:", numeroConPais);
       const response = await fetch(WHATSAPP_API_URL, {
@@ -353,12 +356,15 @@
         const numeroValidado = resultado[0];
         if (numeroValidado.exists === true) {
           console.log("\u2705 N\xFAmero con WhatsApp confirmado");
-          return { valido: true, numeroWhatsApp: numeroConPais };
+          return { valido: true, whatsappActivo: true, numeroWhatsApp: numeroConPais };
         } else {
-          console.log("\u274C N\xFAmero sin WhatsApp detectado");
+          console.log("\u26A0\uFE0F N\xFAmero sin WhatsApp detectado - Continuando con advertencia visual");
           return {
-            valido: false,
-            mensaje: "El n\xFAmero de celular no tiene WhatsApp activo. Por favor ingresa un n\xFAmero v\xE1lido con WhatsApp."
+            valido: true,
+            // NO bloqueamos, solo advertimos
+            whatsappActivo: false,
+            advertencia: true,
+            mensaje: "Este n\xFAmero no tiene WhatsApp activo"
           };
         }
       }
@@ -559,17 +565,20 @@
     setProcessing(true);
     mostrarAlerta("Validando n\xFAmero de WhatsApp...", "info");
     const validacionWhatsApp = await validarWhatsApp(datos.celular);
-    if (!validacionWhatsApp.valido) {
-      mostrarAlerta(validacionWhatsApp.mensaje || "El n\xFAmero no tiene WhatsApp activo.", "error");
-      if (celularInput) celularInput.classList.add("error");
-      setProcessing(false);
-      return;
+    if (celularInput) {
+      celularInput.classList.remove("error", "success");
+      if (validacionWhatsApp.whatsappActivo === true) {
+        celularInput.classList.add("success");
+        console.log("\u2705 WhatsApp activo - borde verde");
+      } else if (validacionWhatsApp.whatsappActivo === false) {
+        celularInput.classList.add("error");
+        console.warn("\u26A0\uFE0F WhatsApp no activo - borde rojo (continuando de todas formas)");
+      }
     }
-    if (validacionWhatsApp.advertencia) {
-      console.warn("\u26A0\uFE0F Continuando sin validaci\xF3n estricta de WhatsApp");
+    if (validacionWhatsApp.advertencia && validacionWhatsApp.mensaje) {
+      mostrarAlerta(validacionWhatsApp.mensaje, "warning");
     }
     if (cedulaInput) cedulaInput.classList.add("success");
-    if (celularInput) celularInput.classList.add("success");
     lastSubmitTime = now;
     try {
       const agenciaIdParam = obtenerParametroURL("id_agencia");
