@@ -313,12 +313,53 @@ function mostrarSesionFinalizada(): void {
         <p style="margin-bottom: 24px; color: #475569; line-height: 1.6; font-size: 16px;">
           Tu turno ha sido procesado. Gracias por usar nuestro sistema.
         </p>
-        <p style="font-size: 14px; color: #64748b; margin-bottom: 0;">
-          Puedes cerrar esta ventana de forma segura.
+        <p style="font-size: 14px; color: #64748b; margin-bottom: 8px;">
+          Esta ventana se cerrará automáticamente en <span id="countdown">15</span> segundos.
+        </p>
+        <p style="font-size: 12px; color: #94a3b8; margin-bottom: 0;">
+          También puedes cerrar esta ventana manualmente.
         </p>
       </div>
     </div>
   `;
+
+  // Iniciar cuenta regresiva y cerrar ventana después de 15 segundos
+  let segundosRestantes = 15;
+  const countdownElement = document.getElementById('countdown');
+  
+  const intervalo = setInterval(() => {
+    segundosRestantes--;
+    if (countdownElement) {
+      countdownElement.textContent = segundosRestantes.toString();
+    }
+    
+    if (segundosRestantes <= 0) {
+      clearInterval(intervalo);
+      cerrarVentana();
+    }
+  }, 1000);
+}
+
+/**
+ * Intenta cerrar la ventana/pestaña del navegador
+ */
+function cerrarVentana(): void {
+  console.log('🚪 Intentando cerrar la ventana...');
+  
+  // Método 1: Intentar cerrar directamente
+  try {
+    window.close();
+  } catch (error) {
+    console.warn('⚠️ No se pudo cerrar con window.close():', error);
+  }
+  
+  // Método 2: Si window.close() no funciona, redirigir a about:blank
+  setTimeout(() => {
+    if (!window.closed) {
+      console.log('🔄 Redirigiendo a about:blank...');
+      window.location.href = 'about:blank';
+    }
+  }, 500);
 }
 
 // ==========================================

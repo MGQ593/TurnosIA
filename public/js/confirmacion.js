@@ -254,12 +254,41 @@
         <p style="margin-bottom: 24px; color: #475569; line-height: 1.6; font-size: 16px;">
           Tu turno ha sido procesado. Gracias por usar nuestro sistema.
         </p>
-        <p style="font-size: 14px; color: #64748b; margin-bottom: 0;">
-          Puedes cerrar esta ventana de forma segura.
+        <p style="font-size: 14px; color: #64748b; margin-bottom: 8px;">
+          Esta ventana se cerrar\xE1 autom\xE1ticamente en <span id="countdown">15</span> segundos.
+        </p>
+        <p style="font-size: 12px; color: #94a3b8; margin-bottom: 0;">
+          Tambi\xE9n puedes cerrar esta ventana manualmente.
         </p>
       </div>
     </div>
   `;
+    let segundosRestantes = 15;
+    const countdownElement = document.getElementById("countdown");
+    const intervalo = setInterval(() => {
+      segundosRestantes--;
+      if (countdownElement) {
+        countdownElement.textContent = segundosRestantes.toString();
+      }
+      if (segundosRestantes <= 0) {
+        clearInterval(intervalo);
+        cerrarVentana();
+      }
+    }, 1e3);
+  }
+  function cerrarVentana() {
+    console.log("\u{1F6AA} Intentando cerrar la ventana...");
+    try {
+      window.close();
+    } catch (error) {
+      console.warn("\u26A0\uFE0F No se pudo cerrar con window.close():", error);
+    }
+    setTimeout(() => {
+      if (!window.closed) {
+        console.log("\u{1F504} Redirigiendo a about:blank...");
+        window.location.href = "about:blank";
+      }
+    }, 500);
   }
   async function generarTonoNotificacion() {
     try {
