@@ -86,7 +86,7 @@ router.get('/verificar-token/:token', (req: Request, res: Response) => {
 
 /**
  * GET /api/token/generar-acceso
- * Genera un token temporal para acceder al formulario
+ * Genera un token temporal para acceder al formulario (sin agencia)
  */
 router.get('/generar-acceso', (req: Request, res: Response) => {
   try {
@@ -103,6 +103,45 @@ router.get('/generar-acceso', (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: 'Error generando token de acceso'
+    });
+  }
+});
+
+/**
+ * POST /api/token/generar-acceso
+ * Genera un token temporal para acceder al formulario con agencia específica
+ */
+router.post('/generar-acceso', (req: Request, res: Response) => {
+  try {
+    const { agenciaId } = req.body;
+
+    console.log('🔑 Generando token de acceso para agencia:', agenciaId);
+
+    if (!agenciaId) {
+      return res.status(400).json({
+        success: false,
+        message: 'El ID de la agencia es requerido'
+      });
+    }
+
+    const token = generarTokenAcceso();
+
+    console.log('✅ Token generado exitosamente');
+
+    res.json({
+      success: true,
+      data: {
+        token,
+        agenciaId,
+        expiresIn: '15 minutos'
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error generando token de acceso:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error generando token de acceso',
+      error: error instanceof Error ? error.message : 'Error desconocido'
     });
   }
 });

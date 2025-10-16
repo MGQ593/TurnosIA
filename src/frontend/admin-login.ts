@@ -123,7 +123,7 @@ function redirigirAPanel(): void {
   mostrarAlerta('✅ Acceso concedido. Redirigiendo...', 'success');
   
   setTimeout(() => {
-    window.location.href = '/generar-qr.html';
+    window.location.href = '/admin-qr-generator.html';
   }, 1000);
 }
 
