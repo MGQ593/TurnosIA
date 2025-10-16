@@ -118,8 +118,8 @@
       if (!qrCanvas) {
         throw new Error("Canvas no encontrado");
       }
-      const cellSize = 8;
-      const margin = 4;
+      const cellSize = 3;
+      const margin = 3;
       const size = qr.getModuleCount() * cellSize + margin * 2;
       qrCanvas.width = size;
       qrCanvas.height = size;

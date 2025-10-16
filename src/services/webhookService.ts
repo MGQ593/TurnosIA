@@ -48,6 +48,7 @@ export async function enviarTurnoWebhook(
     sucursal: data.sucursal,
     sucursal_id: data.sucursal_id,
     fecha_hora: data.fecha_hora,
+    whatsapp_validado: data.whatsapp_validado, // Estado de validación de WhatsApp
     timestamp: new Date().toISOString()
   };
 
@@ -57,6 +58,7 @@ export async function enviarTurnoWebhook(
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       console.log(`📤 Intento ${attempt}/${maxRetries} - Enviando turno ${data.numero_turno} al webhook n8n`);
+      console.log(`📱 Datos del webhook:`, JSON.stringify(payload, null, 2));
 
       const response = await fetch(webhookUrl, {
         method: 'POST',

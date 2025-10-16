@@ -200,8 +200,8 @@ async function generarNuevoQR(): Promise<void> {
       throw new Error('Canvas no encontrado');
     }
 
-    const cellSize = 8;
-    const margin = 4;
+    const cellSize = 3; // Reducido a 3 para QR más compacto
+    const margin = 3;
     const size = qr.getModuleCount() * cellSize + margin * 2;
     
     qrCanvas.width = size;
