@@ -348,6 +348,23 @@ async function inicializar(): Promise<void> {
       btnGenerar.style.display = 'flex';
     }
 
+    // Configurar event listeners de los botones
+    const btnGenerarQR = document.getElementById('btnGenerarQR');
+    const btnDescargarQR = document.getElementById('btnDescargarQR');
+    const btnLogout = document.getElementById('btnLogout');
+
+    if (btnGenerarQR) {
+      btnGenerarQR.addEventListener('click', () => generarNuevoQR());
+    }
+    if (btnDescargarQR) {
+      btnDescargarQR.addEventListener('click', descargarQR);
+    }
+    if (btnLogout) {
+      btnLogout.addEventListener('click', logout);
+    }
+
+    console.log('✅ Event listeners configurados correctamente');
+
     // Iniciar contador de tiempo de sesión
     actualizarTiempoSesion();
 

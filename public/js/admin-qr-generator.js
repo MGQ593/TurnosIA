@@ -213,6 +213,19 @@
       if (btnGenerar) {
         btnGenerar.style.display = "flex";
       }
+      const btnGenerarQR = document.getElementById("btnGenerarQR");
+      const btnDescargarQR = document.getElementById("btnDescargarQR");
+      const btnLogout = document.getElementById("btnLogout");
+      if (btnGenerarQR) {
+        btnGenerarQR.addEventListener("click", () => generarNuevoQR());
+      }
+      if (btnDescargarQR) {
+        btnDescargarQR.addEventListener("click", descargarQR);
+      }
+      if (btnLogout) {
+        btnLogout.addEventListener("click", logout);
+      }
+      console.log("\u2705 Event listeners configurados correctamente");
       actualizarTiempoSesion();
       console.log("\u{1F512} Panel de admin inicializado correctamente");
     } catch (error) {
