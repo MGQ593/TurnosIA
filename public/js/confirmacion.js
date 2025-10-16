@@ -408,15 +408,6 @@
       return;
     }
     try {
-      if (Notification.permission !== "granted") {
-        console.warn("\u26A0\uFE0F Permisos de notificaci\xF3n no otorgados");
-        return;
-      }
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      if (isMobile) {
-        console.log("\u{1F4F1} Dispositivo m\xF3vil detectado - Mostrando alerta visual");
-        mostrarAlertaVisualEnPantalla(titulo, opciones.body);
-      }
       const notificacion = new Notification(titulo, opciones);
       notificacion.onclick = () => {
         window.focus();
@@ -428,65 +419,7 @@
       console.log("\u{1F4EC} Notificaci\xF3n push enviada");
     } catch (error) {
       console.error("\u274C Error enviando notificaci\xF3n push:", error);
-      const body = opciones.body || "";
-      mostrarAlertaVisualEnPantalla(titulo, body);
     }
-  }
-  function mostrarAlertaVisualEnPantalla(titulo, mensaje) {
-    const alertaExistente = document.getElementById("alerta-movil-turno");
-    if (alertaExistente) {
-      alertaExistente.remove();
-    }
-    const alerta = document.createElement("div");
-    alerta.id = "alerta-movil-turno";
-    alerta.style.cssText = `
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: white;
-    padding: 32px 24px;
-    border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-    z-index: 99999;
-    max-width: 90%;
-    width: 400px;
-    text-align: center;
-    animation: slideInBounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  `;
-    alerta.innerHTML = `
-    <div style="font-size: 48px; margin-bottom: 16px;">\u{1F3AB}</div>
-    <div style="font-size: 24px; font-weight: bold; margin-bottom: 12px;">${titulo}</div>
-    <div style="font-size: 18px; line-height: 1.6; white-space: pre-line;">${mensaje}</div>
-  `;
-    const style = document.createElement("style");
-    style.textContent = `
-    @keyframes slideInBounce {
-      0% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0.3);
-      }
-      50% {
-        transform: translate(-50%, -50%) scale(1.05);
-      }
-      100% {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
-      }
-    }
-  `;
-    document.head.appendChild(style);
-    document.body.appendChild(alerta);
-    setTimeout(() => {
-      alerta.style.animation = "fadeOut 0.3s ease-out";
-      setTimeout(() => {
-        alerta.remove();
-      }, 300);
-    }, 8e3);
-    alerta.addEventListener("click", () => {
-      alerta.remove();
-    });
   }
   async function verificarAsignacionTurno(numeroTurno) {
     console.log(`\u{1F504} Iniciando polling para turno: ${numeroTurno}`);

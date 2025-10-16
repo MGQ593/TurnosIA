@@ -549,23 +549,6 @@ function enviarNotificacionPush(titulo: string, opciones: NotificationOptions): 
   }
 
   try {
-    // Verificar permisos antes de enviar
-    if (Notification.permission !== 'granted') {
-      console.warn('⚠️ Permisos de notificación no otorgados');
-      return;
-    }
-
-    // En móviles, mostrar alerta visual alternativa si las notificaciones push no funcionan
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
-    if (isMobile) {
-      console.log('📱 Dispositivo móvil detectado - Mostrando alerta visual');
-      
-      // Crear alerta visual en pantalla para móviles
-      mostrarAlertaVisualEnPantalla(titulo, opciones.body as string);
-    }
-
-    // Intentar enviar notificación push (puede no funcionar en todos los móviles)
     const notificacion = new Notification(titulo, opciones);
     
     // Reproducir sonido también cuando se hace clic en la notificación
@@ -582,83 +565,8 @@ function enviarNotificacionPush(titulo: string, opciones: NotificationOptions): 
     console.log('📬 Notificación push enviada');
   } catch (error) {
     console.error('❌ Error enviando notificación push:', error);
-    
-    // Fallback: mostrar alerta visual en caso de error
-    const body = opciones.body as string || '';
-    mostrarAlertaVisualEnPantalla(titulo, body);
   }
 }
-
-/**
- * Muestra una alerta visual grande en pantalla para móviles
- */
-function mostrarAlertaVisualEnPantalla(titulo: string, mensaje: string): void {
-  const alertaExistente = document.getElementById('alerta-movil-turno');
-  if (alertaExistente) {
-    alertaExistente.remove();
-  }
-
-  const alerta = document.createElement('div');
-  alerta.id = 'alerta-movil-turno';
-  alerta.style.cssText = `
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: white;
-    padding: 32px 24px;
-    border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-    z-index: 99999;
-    max-width: 90%;
-    width: 400px;
-    text-align: center;
-    animation: slideInBounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  `;
-
-  alerta.innerHTML = `
-    <div style="font-size: 48px; margin-bottom: 16px;">🎫</div>
-    <div style="font-size: 24px; font-weight: bold; margin-bottom: 12px;">${titulo}</div>
-    <div style="font-size: 18px; line-height: 1.6; white-space: pre-line;">${mensaje}</div>
-  `;
-
-  // Agregar animación
-  const style = document.createElement('style');
-  style.textContent = `
-    @keyframes slideInBounce {
-      0% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0.3);
-      }
-      50% {
-        transform: translate(-50%, -50%) scale(1.05);
-      }
-      100% {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
-      }
-    }
-  `;
-  document.head.appendChild(style);
-
-  document.body.appendChild(alerta);
-
-  // Auto-cerrar después de 8 segundos
-  setTimeout(() => {
-    alerta.style.animation = 'fadeOut 0.3s ease-out';
-    setTimeout(() => {
-      alerta.remove();
-    }, 300);
-  }, 8000);
-
-  // Cerrar al hacer clic
-  alerta.addEventListener('click', () => {
-    alerta.remove();
-  });
-}
-
-
 
 /**
  * Consulta el estado de asignación del turno (polling)
