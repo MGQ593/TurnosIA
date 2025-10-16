@@ -18,6 +18,44 @@ const solicitarTurnoSchema = z.object({
 });
 
 /**
+ * GET /api/turnos/agencias
+ * Obtiene la lista de agencias activas
+ * Devuelve: id, nombre, codigo de cada agencia
+ */
+router.get('/agencias', async (req: Request, res: Response) => {
+  try {
+    console.log('🏢 Solicitando lista de agencias activas');
+    
+    // Obtener solo agencias activas
+    const agencias = await AgenciasQueries.obtenerActivas();
+    
+    console.log(`✅ Se encontraron ${agencias.length} agencias activas`);
+    
+    const response: ApiResponse = {
+      success: true,
+      message: 'Agencias obtenidas correctamente',
+      data: agencias.map(ag => ({
+        id: ag.id,
+        nombre: ag.nombre,
+        codigo: ag.codigo
+      }))
+    };
+    
+    res.json(response);
+  } catch (error) {
+    console.error('❌ Error obteniendo agencias:', error);
+    
+    const response: ApiResponse = {
+      success: false,
+      message: 'Error al obtener agencias',
+      error: error instanceof Error ? error.message : 'Error desconocido'
+    };
+    
+    res.status(500).json(response);
+  }
+});
+
+/**
  * POST /api/turnos/solicitar
  * Solicita un nuevo turno - Solo requiere datos del formulario
  * Fecha y hora se registran automáticamente

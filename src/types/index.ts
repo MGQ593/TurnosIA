@@ -3,6 +3,7 @@
 export interface Agencia {
   id: number;
   nombre: string;
+  codigo: string;
   direccion: string;
   telefono: string;
   email: string;
