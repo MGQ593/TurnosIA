@@ -46,7 +46,7 @@
           } else {
             const minutosRestantes = Math.ceil(EXPIRATION_MINUTES - ((/* @__PURE__ */ new Date()).getTime() - new Date(turnoData.timestamp).getTime()) / (1e3 * 60));
             mostrarAlerta(`\u23F1\uFE0F Debe esperar ${minutosRestantes} minuto(s) m\xE1s antes de solicitar un nuevo turno.`, "error");
-            mostrarResultado(turnoData.turnoId, null);
+            mostrarResultado(turnoData.turnoId);
             return true;
           }
         }
@@ -54,7 +54,7 @@
           localStorage.removeItem(TURNO_STORAGE_KEY);
           return false;
         }
-        mostrarResultado(turnoData.turnoId, null);
+        mostrarResultado(turnoData.turnoId);
         const tiempoTranscurrido = ((/* @__PURE__ */ new Date()).getTime() - new Date(turnoData.timestamp).getTime()) / (1e3 * 60);
         const tiempoRestante = EXPIRATION_MINUTES - tiempoTranscurrido;
         if (tiempoRestante > 0) {
@@ -86,8 +86,8 @@
     setTimeout(() => {
       console.log("\u23F0 Tiempo de turno expirado. Cerrando ventana...");
       localStorage.removeItem(TURNO_STORAGE_KEY);
-      const cerrado = window.close();
-      if (!cerrado) {
+      window.close();
+      setTimeout(() => {
         document.body.innerHTML = `
                 <div style="
                     display: flex;
@@ -125,7 +125,7 @@
                     </div>
                 </div>
             `;
-      }
+      }, 500);
     }, milisegundos);
     console.log(`\u23F0 Cierre autom\xE1tico programado en ${minutos.toFixed(1)} minutos`);
   }
@@ -418,7 +418,7 @@
       form.removeAttribute("aria-busy");
     }
   }
-  function mostrarResultado(turnoId, datos) {
+  function mostrarResultado(turnoId) {
     if (headerElement) {
       headerElement.classList.add("hidden");
     }
@@ -530,7 +530,7 @@
     }
     const validacionId = validarIdentificacion(datos.cedula);
     if (!validacionId.valido) {
-      mostrarAlerta(validacionId.mensaje, "error");
+      mostrarAlerta(validacionId.mensaje || "Identificaci\xF3n inv\xE1lida", "error");
       if (cedulaInput) cedulaInput.classList.add("error");
       return;
     }
@@ -615,15 +615,17 @@
   });
   if (cedulaInput) {
     cedulaInput.addEventListener("input", function(event) {
-      event.target.value = event.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-      const valor = event.target.value;
+      const target = event.target;
+      target.value = target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+      const valor = target.value;
       cedulaInput.classList.remove("error", "success");
       if (valor.length >= 5) {
         cedulaInput.classList.add("success");
       }
     });
     cedulaInput.addEventListener("blur", function(event) {
-      const valor = event.target.value.trim();
+      const target = event.target;
+      const valor = target.value.trim();
       cedulaInput.classList.remove("error", "success");
       if (valor.length > 0) {
         const validacion = validarIdentificacion(valor);
@@ -637,8 +639,9 @@
   }
   if (celularInput) {
     celularInput.addEventListener("input", function(event) {
-      event.target.value = event.target.value.replace(/[^\d\s\-]/g, "");
-      const valor = event.target.value;
+      const target = event.target;
+      target.value = target.value.replace(/[^\d\s\-]/g, "");
+      const valor = target.value;
       const limpio = valor.replace(/[\s\-\(\)]/g, "");
       celularInput.classList.remove("error", "success");
       if (limpio.length === 10 && /^\d{10}$/.test(limpio)) {
@@ -648,7 +651,8 @@
       }
     });
     celularInput.addEventListener("blur", function(event) {
-      const valor = event.target.value.trim();
+      const target = event.target;
+      const valor = target.value.trim();
       const limpio = valor.replace(/[\s\-\(\)]/g, "");
       celularInput.classList.remove("error", "success");
       if (limpio.length > 0) {

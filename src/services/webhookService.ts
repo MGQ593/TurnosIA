@@ -3,8 +3,8 @@
  */
 
 interface TurnoWebhookData {
-  id_turno: number;
-  numero_turno: string;
+  id_turno: number; // ID único del turno en la base de datos
+  numero_turno: string; // Número de turno visible (T001, T002, etc.)
   cedula: string;
   telefono: string;
   sucursal: string;
@@ -41,8 +41,8 @@ export async function enviarTurnoWebhook(
   }
 
   const payload = {
-    id_turno: data.id_turno,
-    numero_turno: data.numero_turno,
+    id_turno: data.id_turno, // ⭐ ID único para asignar el turno sin colisiones
+    numero_turno: data.numero_turno, // Número visible del turno
     cedula: data.cedula,
     telefono: data.telefono,
     sucursal: data.sucursal,

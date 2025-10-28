@@ -316,6 +316,43 @@ export class TurnosQueries {
   }
 
   /**
+   * Asigna un turno a un módulo y asesor usando el ID único del turno
+   * Esta es la forma recomendada para evitar colisiones entre turnos del mismo día
+   * @param idTurno ID único del turno
+   * @param modulo Nombre del módulo
+   * @param asesor Nombre del asesor
+   * @returns Datos del turno asignado o null si no se encontró
+   */
+  static async asignarTurnoPorId(
+    idTurno: number,
+    modulo: string,
+    asesor: string
+  ): Promise<Turno | null> {
+    const result = await query(`
+      UPDATE turnos_ia.turnos
+      SET modulo = $1,
+          asesor = $2,
+          estado = 'llamado',
+          fecha_asignacion = NOW(),
+          tiempo_espera_minutos = EXTRACT(EPOCH FROM (NOW() - created_at)) / 60,
+          updated_at = NOW()
+      WHERE id = $3
+        AND estado = 'pendiente'
+      RETURNING id, cliente_id, agencia_id, numero_turno, fecha_hora,
+                estado, prioridad, origen, modulo, asesor,
+                fecha_asignacion, tiempo_espera_minutos, created_at, updated_at
+    `, [modulo, asesor, idTurno]);
+
+    if (result.rows.length > 0) {
+      console.log('✅ Turno asignado por ID:', result.rows[0]);
+      return result.rows[0];
+    }
+
+    console.warn(`⚠️ No se encontró turno con ID ${idTurno} en estado pendiente`);
+    return null;
+  }
+
+  /**
    * Genera el siguiente número de turno para el día actual y agencia específica
    * Formato: T001 a T999 (por agencia, por día)
    */

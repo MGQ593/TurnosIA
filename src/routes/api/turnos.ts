@@ -358,22 +358,24 @@ router.get('/estado/:numero', async (req: Request, res: Response) => {
  * POST /api/webhook/asignar-turno
  * Webhook para asignar un turno a un módulo y asesor
  * Este endpoint es llamado por sistemas externos cuando un asesor llama a un turno
- * IMPORTANTE: Ahora requiere agencia_id para evitar colisiones entre agencias
+ * IMPORTANTE: Ahora requiere id_turno (ID único) para evitar colisiones entre turnos del mismo día
  */
 router.post('/webhook/asignar-turno', async (req: Request, res: Response) => {
   try {
     console.log('📥 Webhook de asignación recibido:', req.body);
-    
-    // Validar datos (ahora incluye agencia_id)
+
+    // Validar datos (ahora usa id_turno en lugar de numero_turno + agencia_id)
     const asignarSchema = z.object({
-      numero_turno: z.string().min(1, 'Número de turno es requerido'),
-      agencia_id: z.number().int().positive('ID de agencia es requerido'),
+      id_turno: z.number().int().positive('ID de turno es requerido'),
       modulo: z.string().min(1, 'Módulo es requerido'),
-      asesor: z.string().min(1, 'Asesor es requerido')
+      asesor: z.string().min(1, 'Asesor es requerido'),
+      // Campos opcionales para logging y compatibilidad
+      numero_turno: z.string().optional(),
+      agencia_id: z.number().int().positive().optional()
     });
 
     const validationResult = asignarSchema.safeParse(req.body);
-    
+
     if (!validationResult.success) {
       console.error('❌ Validación fallida:', validationResult.error.errors);
       const response: ApiResponse = {
@@ -384,37 +386,39 @@ router.post('/webhook/asignar-turno', async (req: Request, res: Response) => {
       return res.status(400).json(response);
     }
 
-    const { numero_turno, agencia_id, modulo, asesor } = validationResult.data;
+    const { id_turno, modulo, asesor, numero_turno, agencia_id } = validationResult.data;
 
-    // Asignar turno (ahora con agencia_id)
-    const asignado = await TurnosQueries.asignarTurno(numero_turno, agencia_id, modulo, asesor);
-    
-    if (!asignado) {
+    // Asignar turno usando el ID único
+    const turnoAsignado = await TurnosQueries.asignarTurnoPorId(id_turno, modulo, asesor);
+
+    if (!turnoAsignado) {
       const response: ApiResponse = {
         success: false,
-        message: `No se pudo asignar el turno. Verifique que el turno ${numero_turno} existe en la agencia ${agencia_id}.`
+        message: `No se pudo asignar el turno. Verifique que el turno con ID ${id_turno} existe y está pendiente.`
       };
       return res.status(404).json(response);
     }
 
-    console.log(`✅ Turno ${numero_turno} de agencia ${agencia_id} asignado a ${modulo} - ${asesor}`);
+    console.log(`✅ Turno ID ${id_turno} (${turnoAsignado.numero_turno}) asignado a ${modulo} - ${asesor}`);
 
     const response: ApiResponse = {
       success: true,
       message: 'Turno asignado correctamente',
       data: {
-        numero_turno,
-        agencia_id,
-        modulo,
-        asesor,
-        fecha_asignacion: new Date()
+        id_turno: turnoAsignado.id,
+        numero_turno: turnoAsignado.numero_turno,
+        agencia_id: turnoAsignado.agencia_id,
+        modulo: turnoAsignado.modulo,
+        asesor: turnoAsignado.asesor,
+        estado: turnoAsignado.estado,
+        fecha_asignacion: turnoAsignado.fecha_asignacion
       }
     };
 
     res.json(response);
   } catch (error) {
     console.error('Error asignando turno:', error);
-    
+
     const response: ApiResponse = {
       success: false,
       message: 'Error interno del servidor',
