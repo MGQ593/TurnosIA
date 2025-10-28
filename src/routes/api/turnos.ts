@@ -400,7 +400,7 @@ router.post('/webhook/asignar-turno', async (req: Request, res: Response) => {
           success: false,
           message: `El turno con ID ${id_turno} no existe.`
         };
-        return res.status(404).json(response);
+        return res.status(200).json(response);
       }
 
       // Si el turno existe pero no está pendiente, informar el estado actual
@@ -417,7 +417,7 @@ router.post('/webhook/asignar-turno', async (req: Request, res: Response) => {
             fecha_asignacion: turnoExistente.fecha_asignacion
           }
         };
-        return res.status(409).json(response); // 409 Conflict
+        return res.status(200).json(response);
       }
 
       // Otros estados
@@ -425,7 +425,7 @@ router.post('/webhook/asignar-turno', async (req: Request, res: Response) => {
         success: false,
         message: `El turno ${turnoExistente.numero_turno} no está en estado pendiente. Estado actual: ${turnoExistente.estado}.`
       };
-      return res.status(400).json(response);
+      return res.status(200).json(response);
     }
 
     console.log(`✅ Turno ID ${id_turno} (${turnoAsignado.numero_turno}) asignado a ${modulo} - ${asesor}`);
