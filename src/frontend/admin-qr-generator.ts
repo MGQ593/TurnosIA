@@ -26,6 +26,7 @@ declare const qrcode: any;
 // Variables Globales
 // ==========================================
 let currentAccessToken: string | null = null;
+let currentQrUrl: string | null = null;
 let expirationMinutes = 15;
 let countdownInterval: number | null = null;
 let qrGeneratedCount = 0;
@@ -187,6 +188,7 @@ async function generarNuevoQR(): Promise<void> {
     // Construir URL con token y agencia
     const baseUrl = window.location.origin;
     const qrUrl = `${baseUrl}/solicitar-turno.html?id_agencia=${agenciaId}&access=${token}`;
+    currentQrUrl = qrUrl; // Guardar URL para mostrar
 
     console.log('📱 Generando QR para agencia', agenciaId, '- URL:', qrUrl);
 
@@ -234,6 +236,9 @@ async function generarNuevoQR(): Promise<void> {
     if (qrCountDisplay) {
       qrCountDisplay.textContent = qrGeneratedCount.toString();
     }
+
+    // Mostrar URL debajo del QR
+    mostrarUrlGenerada(qrUrl);
 
     console.log('✅ QR permanente generado exitosamente');
 
@@ -286,6 +291,95 @@ function mostrarError(mensaje: string): void {
   } else {
     errorMessage.style.display = 'none';
   }
+}
+
+/**
+ * Muestra la URL generada debajo del QR
+ */
+function mostrarUrlGenerada(url: string): void {
+  // Buscar o crear el elemento para mostrar la URL
+  let urlDisplay = document.getElementById('qrUrlDisplay');
+
+  if (!urlDisplay) {
+    // Crear el elemento si no existe
+    const qrInfo = document.querySelector('.qr-info');
+    if (!qrInfo) return;
+
+    urlDisplay = document.createElement('div');
+    urlDisplay.id = 'qrUrlDisplay';
+    urlDisplay.style.cssText = `
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      border: 1px solid #bae6fd;
+      border-radius: 8px;
+      word-break: break-all;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: #0369a1;
+      max-width: 100%;
+      overflow-x: auto;
+    `;
+
+    // Insertar después del qr-info
+    qrInfo.parentNode?.insertBefore(urlDisplay, qrInfo.nextSibling);
+  }
+
+  // Actualizar contenido con la URL y un botón para copiar
+  urlDisplay.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+      <strong style="color: #0369a1; font-size: 12px;">🔗 URL del QR:</strong>
+      <button id="btnCopyUrl" style="
+        padding: 4px 12px;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+        📋 Copiar URL
+      </button>
+    </div>
+    <div style="
+      background: white;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #e0f2fe;
+      font-size: 11px;
+      line-height: 1.4;
+    ">${url}</div>
+  `;
+
+  // Agregar evento al botón de copiar
+  const btnCopy = document.getElementById('btnCopyUrl');
+  if (btnCopy) {
+    btnCopy.addEventListener('click', () => copiarUrl(url));
+  }
+}
+
+/**
+ * Copia la URL al portapapeles
+ */
+function copiarUrl(url: string): void {
+  navigator.clipboard.writeText(url).then(() => {
+    const btnCopy = document.getElementById('btnCopyUrl');
+    if (btnCopy) {
+      const originalText = btnCopy.innerHTML;
+      btnCopy.innerHTML = '✅ Copiado!';
+      btnCopy.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
+
+      setTimeout(() => {
+        btnCopy.innerHTML = originalText;
+        btnCopy.style.background = 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)';
+      }, 2000);
+    }
+  }).catch(err => {
+    console.error('Error al copiar URL:', err);
+    mostrarError('No se pudo copiar la URL al portapapeles');
+  });
 }
 
 /**

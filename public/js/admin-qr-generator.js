@@ -1,6 +1,7 @@
 "use strict";
 (() => {
   let currentAccessToken = null;
+  let currentQrUrl = null;
   let expirationMinutes = 15;
   let countdownInterval = null;
   let qrGeneratedCount = 0;
@@ -111,6 +112,7 @@
       currentAccessToken = token;
       const baseUrl = window.location.origin;
       const qrUrl = `${baseUrl}/solicitar-turno.html?id_agencia=${agenciaId}&access=${token}`;
+      currentQrUrl = qrUrl;
       console.log("\u{1F4F1} Generando QR para agencia", agenciaId, "- URL:", qrUrl);
       const qr = qrcode(0, "M");
       qr.addData(qrUrl);
@@ -146,6 +148,7 @@
       if (qrCountDisplay) {
         qrCountDisplay.textContent = qrGeneratedCount.toString();
       }
+      mostrarUrlGenerada(qrUrl);
       console.log("\u2705 QR permanente generado exitosamente");
     } catch (error) {
       console.error("Error generando QR:", error);
@@ -181,6 +184,76 @@
     } else {
       errorMessage.style.display = "none";
     }
+  }
+  function mostrarUrlGenerada(url) {
+    let urlDisplay = document.getElementById("qrUrlDisplay");
+    if (!urlDisplay) {
+      const qrInfo = document.querySelector(".qr-info");
+      if (!qrInfo) return;
+      urlDisplay = document.createElement("div");
+      urlDisplay.id = "qrUrlDisplay";
+      urlDisplay.style.cssText = `
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      border: 1px solid #bae6fd;
+      border-radius: 8px;
+      word-break: break-all;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: #0369a1;
+      max-width: 100%;
+      overflow-x: auto;
+    `;
+      qrInfo.parentNode?.insertBefore(urlDisplay, qrInfo.nextSibling);
+    }
+    urlDisplay.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+      <strong style="color: #0369a1; font-size: 12px;">\u{1F517} URL del QR:</strong>
+      <button id="btnCopyUrl" style="
+        padding: 4px 12px;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+        \u{1F4CB} Copiar URL
+      </button>
+    </div>
+    <div style="
+      background: white;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #e0f2fe;
+      font-size: 11px;
+      line-height: 1.4;
+    ">${url}</div>
+  `;
+    const btnCopy = document.getElementById("btnCopyUrl");
+    if (btnCopy) {
+      btnCopy.addEventListener("click", () => copiarUrl(url));
+    }
+  }
+  function copiarUrl(url) {
+    navigator.clipboard.writeText(url).then(() => {
+      const btnCopy = document.getElementById("btnCopyUrl");
+      if (btnCopy) {
+        const originalText = btnCopy.innerHTML;
+        btnCopy.innerHTML = "\u2705 Copiado!";
+        btnCopy.style.background = "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)";
+        setTimeout(() => {
+          btnCopy.innerHTML = originalText;
+          btnCopy.style.background = "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)";
+        }, 2e3);
+      }
+    }).catch((err) => {
+      console.error("Error al copiar URL:", err);
+      mostrarError("No se pudo copiar la URL al portapapeles");
+    });
   }
   function logout() {
     if (confirm("\xBFEst\xE1s seguro de que quieres cerrar la sesi\xF3n?")) {
