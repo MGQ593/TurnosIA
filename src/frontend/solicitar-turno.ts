@@ -148,13 +148,13 @@ function programarCierreAutomatico(minutosCustom?: number): void {
         
         // Limpiar localStorage
         localStorage.removeItem(TURNO_STORAGE_KEY);
-        
-        // Intentar cerrar la ventana
-        const cerrado = window.close();
-        
-        // Si no se pudo cerrar (la ventana no fue abierta por JS)
-        if (!cerrado) {
-            // Mostrar mensaje amigable
+
+        // Intentar cerrar la ventana (window.close() retorna void, no boolean)
+        window.close();
+
+        // Mostrar mensaje alternativo después de un delay (si la ventana no se cerró)
+        setTimeout(() => {
+            // Si este código se ejecuta, significa que la ventana no se cerró
             document.body.innerHTML = `
                 <div style="
                     display: flex;
@@ -192,7 +192,7 @@ function programarCierreAutomatico(minutosCustom?: number): void {
                     </div>
                 </div>
             `;
-        }
+        }, 500); // 500ms delay para dar tiempo a que window.close() funcione
     }, milisegundos);
     
     console.log(`⏰ Cierre automático programado en ${minutos.toFixed(1)} minutos`);
@@ -839,10 +839,11 @@ form.addEventListener('submit', async function (event) {
 
 // Event listeners para validación en tiempo real
 if (cedulaInput) {
-    cedulaInput.addEventListener('input', function (event) {
-        event.target.value = event.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-        
-        const valor = event.target.value;
+    cedulaInput.addEventListener('input', function (event: Event) {
+        const target = event.target as HTMLInputElement;
+        target.value = target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+
+        const valor = target.value;
         cedulaInput.classList.remove('error', 'success');
         
         if (valor.length >= 5) {
@@ -850,8 +851,9 @@ if (cedulaInput) {
         }
     });
     
-    cedulaInput.addEventListener('blur', function(event) {
-        const valor = event.target.value.trim();
+    cedulaInput.addEventListener('blur', function(event: Event) {
+        const target = event.target as HTMLInputElement;
+        const valor = target.value.trim();
         cedulaInput.classList.remove('error', 'success');
         
         if (valor.length > 0) {
@@ -866,10 +868,11 @@ if (cedulaInput) {
 }
 
 if (celularInput) {
-    celularInput.addEventListener('input', function (event) {
-        event.target.value = event.target.value.replace(/[^\d\s\-]/g, '');
-        
-        const valor = event.target.value;
+    celularInput.addEventListener('input', function (event: Event) {
+        const target = event.target as HTMLInputElement;
+        target.value = target.value.replace(/[^\d\s\-]/g, '');
+
+        const valor = target.value;
         const limpio = valor.replace(/[\s\-\(\)]/g, '');
         celularInput.classList.remove('error', 'success');
         
@@ -880,8 +883,9 @@ if (celularInput) {
         }
     });
     
-    celularInput.addEventListener('blur', function(event) {
-        const valor = event.target.value.trim();
+    celularInput.addEventListener('blur', function(event: Event) {
+        const target = event.target as HTMLInputElement;
+        const valor = target.value.trim();
         const limpio = valor.replace(/[\s\-\(\)]/g, '');
         celularInput.classList.remove('error', 'success');
         
