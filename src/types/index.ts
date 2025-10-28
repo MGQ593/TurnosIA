@@ -33,9 +33,13 @@ export interface Turno {
   agencia_id: number;
   numero_turno: string;
   fecha_hora: Date;
-  estado: 'pendiente' | 'atendido' | 'cancelado' | 'expirado';
+  estado: 'pendiente' | 'llamado' | 'atendido' | 'cancelado' | 'expirado';
   prioridad: string; // 'normal', 'alta', etc.
   origen: string; // 'web', 'whatsapp', etc.
+  modulo?: string; // Módulo asignado cuando se llama al turno
+  asesor?: string; // Asesor asignado cuando se llama al turno
+  fecha_asignacion?: Date; // Fecha cuando se asignó el turno
+  tiempo_espera_minutos?: number; // Tiempo de espera en minutos
   created_at: Date;
   updated_at: Date;
 }
