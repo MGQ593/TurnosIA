@@ -392,11 +392,40 @@ router.post('/webhook/asignar-turno', async (req: Request, res: Response) => {
     const turnoAsignado = await TurnosQueries.asignarTurnoPorId(id_turno, modulo, asesor);
 
     if (!turnoAsignado) {
+      // Si no se pudo asignar, verificar si el turno existe y por qué no se asignó
+      const turnoExistente = await TurnosQueries.obtenerTurnoPorId(id_turno);
+
+      if (!turnoExistente) {
+        const response: ApiResponse = {
+          success: false,
+          message: `El turno con ID ${id_turno} no existe.`
+        };
+        return res.status(404).json(response);
+      }
+
+      // Si el turno existe pero no está pendiente, informar el estado actual
+      if (turnoExistente.estado === 'llamado' && turnoExistente.asesor) {
+        const response: ApiResponse = {
+          success: false,
+          message: `El turno ${turnoExistente.numero_turno} ya fue llamado por ${turnoExistente.asesor} en ${turnoExistente.modulo || 'módulo desconocido'}.`,
+          data: {
+            id_turno: turnoExistente.id,
+            numero_turno: turnoExistente.numero_turno,
+            estado: turnoExistente.estado,
+            modulo: turnoExistente.modulo,
+            asesor: turnoExistente.asesor,
+            fecha_asignacion: turnoExistente.fecha_asignacion
+          }
+        };
+        return res.status(409).json(response); // 409 Conflict
+      }
+
+      // Otros estados
       const response: ApiResponse = {
         success: false,
-        message: `No se pudo asignar el turno. Verifique que el turno con ID ${id_turno} existe y está pendiente.`
+        message: `El turno ${turnoExistente.numero_turno} no está en estado pendiente. Estado actual: ${turnoExistente.estado}.`
       };
-      return res.status(404).json(response);
+      return res.status(400).json(response);
     }
 
     console.log(`✅ Turno ID ${id_turno} (${turnoAsignado.numero_turno}) asignado a ${modulo} - ${asesor}`);

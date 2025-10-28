@@ -353,6 +353,23 @@ export class TurnosQueries {
   }
 
   /**
+   * Obtiene información de un turno por ID, incluyendo si ya fue asignado
+   * @param idTurno ID del turno
+   * @returns Información del turno o null si no existe
+   */
+  static async obtenerTurnoPorId(idTurno: number): Promise<Turno | null> {
+    const result = await query(`
+      SELECT id, cliente_id, agencia_id, numero_turno, fecha_hora,
+             estado, prioridad, origen, modulo, asesor,
+             fecha_asignacion, tiempo_espera_minutos, created_at, updated_at
+      FROM turnos_ia.turnos
+      WHERE id = $1
+    `, [idTurno]);
+
+    return result.rows[0] || null;
+  }
+
+  /**
    * Genera el siguiente número de turno para el día actual y agencia específica
    * Formato: T001 a T999 (por agencia, por día)
    */
