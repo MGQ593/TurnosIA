@@ -88,7 +88,7 @@ function verificarTurnoGuardado(): boolean {
                     // No ha pasado el tiempo suficiente
                     const minutosRestantes = Math.ceil(EXPIRATION_MINUTES - ((new Date().getTime() - new Date(turnoData.timestamp).getTime()) / (1000 * 60)));
                     mostrarAlerta(`⏱️ Debe esperar ${minutosRestantes} minuto(s) más antes de solicitar un nuevo turno.`, 'error');
-                    mostrarResultado(turnoData.turnoId, null);
+                    mostrarResultado(turnoData.turnoId);
                     return true;
                 }
             }
@@ -100,7 +100,7 @@ function verificarTurnoGuardado(): boolean {
             }
             
             // Turno válido, mostrarlo
-            mostrarResultado(turnoData.turnoId, null);
+            mostrarResultado(turnoData.turnoId);
             
             // Programar cierre automático para el tiempo restante
             const tiempoTranscurrido = (new Date().getTime() - new Date(turnoData.timestamp).getTime()) / (1000 * 60);
@@ -325,7 +325,7 @@ function mostrarAccesoDenegado() {
 }
 
 // Validar cédula ecuatoriana (algoritmo del módulo 10)
-function validarCedulaEcuatoriana(cedula) {
+function validarCedulaEcuatoriana(cedula: string): boolean {
     if (!/^\d{10}$/.test(cedula)) {
         return false;
     }
@@ -359,7 +359,7 @@ function validarCedulaEcuatoriana(cedula) {
 }
 
 // Validar número de identificación (cédula, RUC o pasaporte)
-function validarIdentificacion(identificacion) {
+function validarIdentificacion(identificacion: string): ValidationResult {
     const limpio = identificacion.trim().toUpperCase();
 
     if (/[A-Z]/.test(limpio)) {
@@ -557,7 +557,7 @@ async function cargarConfigPublica(): Promise<void> {
 }
 
 // Establecer estado de procesamiento
-function setProcessing(isProcessing) {
+function setProcessing(isProcessing: boolean): void {
     if (formShell) {
         formShell.classList.toggle('is-loading', isProcessing);
     }
@@ -575,7 +575,7 @@ function setProcessing(isProcessing) {
 }
 
 // Mostrar resultado del turno
-function mostrarResultado(turnoId, datos) {
+function mostrarResultado(turnoId: string): void {
     if (headerElement) {
         headerElement.classList.add('hidden');
     }
@@ -606,7 +606,7 @@ function mostrarResultado(turnoId, datos) {
 }
 
 // Mostrar alerta
-function mostrarAlerta(mensaje, tipo) {
+function mostrarAlerta(mensaje: string, tipo: 'success' | 'error' | 'warning' | 'info'): void {
     if (!alertContainer) {
         return;
     }
@@ -728,7 +728,7 @@ form.addEventListener('submit', async function (event) {
 
     const validacionId = validarIdentificacion(datos.cedula);
     if (!validacionId.valido) {
-        mostrarAlerta(validacionId.mensaje, 'error');
+        mostrarAlerta(validacionId.mensaje || 'Identificación inválida', 'error');
         if (cedulaInput) cedulaInput.classList.add('error');
         return;
     }
