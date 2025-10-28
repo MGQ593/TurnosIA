@@ -399,7 +399,7 @@ function validarIdentificacion(identificacion: string): ValidationResult {
 }
 
 // Validar si el número tiene WhatsApp usando Evolution API
-async function validarWhatsApp(celular) {
+async function validarWhatsApp(celular: string): Promise<WhatsAppValidationResult> {
     try {
         if (!WHATSAPP_API_URL || !WHATSAPP_API_TOKEN) {
             console.warn('⚠️ WhatsApp API no configurada, omitiendo validación');

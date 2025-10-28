@@ -24,6 +24,7 @@ export interface WhatsAppValidationResult {
   mensaje?: string;
   numeroWhatsApp?: string;
   advertencia?: boolean;
+  whatsappActivo?: boolean;
 }
 
 // ============= Formulario =============
