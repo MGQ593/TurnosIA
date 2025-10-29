@@ -17,6 +17,10 @@ interface Agencia {
   id: number;
   nombre: string;
   codigo: string;
+  direccion?: string;
+  telefono?: string;
+  email?: string;
+  activa?: boolean;
 }
 
 // Declaración para la librería qrcode (cargada vía CDN)
@@ -33,6 +37,7 @@ let qrGeneratedCount = 0;
 let sessionStartTime = Date.now();
 let sessionTimeInterval: number | null = null;
 let agencias: Agencia[] = [];
+let agenciaEditando: Agencia | null = null;
 
 // ==========================================
 // Elementos del DOM
@@ -382,6 +387,187 @@ function copiarUrl(url: string): void {
   });
 }
 
+// ==========================================
+// Funciones de Gestión de Agencias
+// ==========================================
+
+/**
+ * Abre el modal para crear una nueva agencia
+ */
+function abrirModalNuevaAgencia(): void {
+  agenciaEditando = null;
+  const modal = document.getElementById('modalAgencia');
+  const modalTitle = document.getElementById('modalTitle');
+  const form = document.getElementById('formAgencia') as HTMLFormElement;
+
+  if (modalTitle) modalTitle.textContent = 'Nueva Agencia';
+  if (form) form.reset();
+
+  // Limpiar errores
+  mostrarErrorModal('');
+
+  if (modal) {
+    modal.style.display = 'flex';
+  }
+}
+
+/**
+ * Abre el modal para editar una agencia existente
+ */
+function abrirModalEditarAgencia(): void {
+  const selectAgencia = document.getElementById('selectAgencia') as HTMLSelectElement;
+  if (!selectAgencia || !selectAgencia.value) {
+    mostrarError('Por favor selecciona una agencia primero');
+    return;
+  }
+
+  const agenciaId = parseInt(selectAgencia.value);
+  const agencia = agencias.find(ag => ag.id === agenciaId);
+
+  if (!agencia) {
+    mostrarError('Agencia no encontrada');
+    return;
+  }
+
+  agenciaEditando = agencia;
+
+  const modal = document.getElementById('modalAgencia');
+  const modalTitle = document.getElementById('modalTitle');
+
+  if (modalTitle) modalTitle.textContent = 'Editar Agencia';
+
+  // Llenar el formulario con los datos de la agencia
+  const inputNombre = document.getElementById('inputNombre') as HTMLInputElement;
+  const inputCodigo = document.getElementById('inputCodigo') as HTMLInputElement;
+  const inputDireccion = document.getElementById('inputDireccion') as HTMLInputElement;
+  const inputTelefono = document.getElementById('inputTelefono') as HTMLInputElement;
+  const inputEmail = document.getElementById('inputEmail') as HTMLInputElement;
+
+  if (inputNombre) inputNombre.value = agencia.nombre;
+  if (inputCodigo) inputCodigo.value = agencia.codigo;
+  if (inputDireccion) inputDireccion.value = agencia.direccion || '';
+  if (inputTelefono) inputTelefono.value = agencia.telefono || '';
+  if (inputEmail) inputEmail.value = agencia.email || '';
+
+  // Limpiar errores
+  mostrarErrorModal('');
+
+  if (modal) {
+    modal.style.display = 'flex';
+  }
+}
+
+/**
+ * Cierra el modal de agencia
+ */
+function cerrarModalAgencia(): void {
+  const modal = document.getElementById('modalAgencia');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+  agenciaEditando = null;
+}
+
+/**
+ * Guarda una agencia (crear o actualizar)
+ */
+async function guardarAgencia(event: Event): Promise<void> {
+  event.preventDefault();
+
+  const inputNombre = document.getElementById('inputNombre') as HTMLInputElement;
+  const inputCodigo = document.getElementById('inputCodigo') as HTMLInputElement;
+  const inputDireccion = document.getElementById('inputDireccion') as HTMLInputElement;
+  const inputTelefono = document.getElementById('inputTelefono') as HTMLInputElement;
+  const inputEmail = document.getElementById('inputEmail') as HTMLInputElement;
+
+  const datos = {
+    nombre: inputNombre?.value.trim(),
+    codigo: inputCodigo?.value.trim().toUpperCase(),
+    direccion: inputDireccion?.value.trim() || '',
+    telefono: inputTelefono?.value.trim() || '',
+    email: inputEmail?.value.trim() || ''
+  };
+
+  if (!datos.nombre || !datos.codigo) {
+    mostrarErrorModal('Nombre y código son campos requeridos');
+    return;
+  }
+
+  try {
+    let url = '/api/turnos/agencias';
+    let method = 'POST';
+
+    if (agenciaEditando) {
+      url = `/api/turnos/agencias/${agenciaEditando.id}`;
+      method = 'PUT';
+    }
+
+    const response = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(datos)
+    });
+
+    const result: ApiResponse = await response.json();
+
+    if (!result.success) {
+      mostrarErrorModal(result.message || 'Error al guardar la agencia');
+      return;
+    }
+
+    console.log('✅ Agencia guardada exitosamente');
+
+    // Cerrar modal
+    cerrarModalAgencia();
+
+    // Recargar lista de agencias
+    await cargarAgencias();
+
+    // Mostrar mensaje de éxito
+    mostrarError('');
+    const successMsg = agenciaEditando ? 'Agencia actualizada exitosamente' : 'Agencia creada exitosamente';
+
+    // Mensaje temporal de éxito
+    const originalError = errorMessage?.textContent || '';
+    if (errorMessage) {
+      errorMessage.textContent = `✅ ${successMsg}`;
+      errorMessage.style.display = 'block';
+      errorMessage.style.background = 'linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)';
+      errorMessage.style.borderColor = '#22c55e';
+      errorMessage.style.color = '#166534';
+
+      setTimeout(() => {
+        errorMessage.style.display = 'none';
+        errorMessage.style.background = 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)';
+        errorMessage.style.borderColor = '#f87171';
+        errorMessage.style.color = '#991b1b';
+        errorMessage.textContent = originalError;
+      }, 3000);
+    }
+
+  } catch (error) {
+    console.error('Error guardando agencia:', error);
+    mostrarErrorModal('Error al guardar la agencia. Por favor intenta nuevamente.');
+  }
+}
+
+/**
+ * Muestra un mensaje de error en el modal
+ */
+function mostrarErrorModal(mensaje: string): void {
+  const modalError = document.getElementById('modalError');
+  if (!modalError) return;
+
+  if (mensaje) {
+    modalError.textContent = mensaje;
+    modalError.style.display = 'block';
+  } else {
+    modalError.style.display = 'none';
+  }
+}
+
 /**
  * Cierra la sesión del administrador
  */
@@ -416,6 +602,10 @@ function actualizarTiempoSesion(): void {
 (window as any).generarNuevoQR = generarNuevoQR;
 (window as any).descargarQR = descargarQR;
 (window as any).logout = logout;
+(window as any).abrirModalNuevaAgencia = abrirModalNuevaAgencia;
+(window as any).abrirModalEditarAgencia = abrirModalEditarAgencia;
+(window as any).cerrarModalAgencia = cerrarModalAgencia;
+(window as any).guardarAgencia = guardarAgencia;
 
 // ==========================================
 // Inicialización
@@ -446,6 +636,10 @@ async function inicializar(): Promise<void> {
     const btnGenerarQR = document.getElementById('btnGenerarQR');
     const btnDescargarQR = document.getElementById('btnDescargarQR');
     const btnLogout = document.getElementById('btnLogout');
+    const btnNuevaAgencia = document.getElementById('btnNuevaAgencia');
+    const btnEditarAgencia = document.getElementById('btnEditarAgencia');
+    const btnCancelarModal = document.getElementById('btnCancelarModal');
+    const formAgencia = document.getElementById('formAgencia');
 
     if (btnGenerarQR) {
       btnGenerarQR.addEventListener('click', () => generarNuevoQR());
@@ -455,6 +649,28 @@ async function inicializar(): Promise<void> {
     }
     if (btnLogout) {
       btnLogout.addEventListener('click', logout);
+    }
+    if (btnNuevaAgencia) {
+      btnNuevaAgencia.addEventListener('click', abrirModalNuevaAgencia);
+    }
+    if (btnEditarAgencia) {
+      btnEditarAgencia.addEventListener('click', abrirModalEditarAgencia);
+    }
+    if (btnCancelarModal) {
+      btnCancelarModal.addEventListener('click', cerrarModalAgencia);
+    }
+    if (formAgencia) {
+      formAgencia.addEventListener('submit', guardarAgencia);
+    }
+
+    // Cerrar modal al hacer clic fuera de él
+    const modal = document.getElementById('modalAgencia');
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          cerrarModalAgencia();
+        }
+      });
     }
 
     console.log('✅ Event listeners configurados correctamente');

@@ -26,32 +26,228 @@ const solicitarTurnoSchema = z.object({
 router.get('/agencias', async (req: Request, res: Response) => {
   try {
     console.log('🏢 Solicitando lista de agencias activas');
-    
+
     // Obtener solo agencias activas
     const agencias = await AgenciasQueries.obtenerActivas();
-    
+
     console.log(`✅ Se encontraron ${agencias.length} agencias activas`);
-    
+
     const response: ApiResponse = {
       success: true,
       message: 'Agencias obtenidas correctamente',
       data: agencias.map(ag => ({
         id: ag.id,
         nombre: ag.nombre,
-        codigo: ag.codigo
+        codigo: ag.codigo,
+        direccion: ag.direccion,
+        telefono: ag.telefono,
+        email: ag.email,
+        activa: ag.activa
       }))
     };
-    
+
     res.json(response);
   } catch (error) {
     console.error('❌ Error obteniendo agencias:', error);
-    
+
     const response: ApiResponse = {
       success: false,
       message: 'Error al obtener agencias',
       error: error instanceof Error ? error.message : 'Error desconocido'
     };
-    
+
+    res.status(500).json(response);
+  }
+});
+
+/**
+ * POST /api/turnos/agencias
+ * Crea una nueva agencia
+ */
+router.post('/agencias', async (req: Request, res: Response) => {
+  try {
+    console.log('🏢 Creando nueva agencia:', req.body);
+
+    const { nombre, codigo, direccion, telefono, email } = req.body;
+
+    // Validar campos requeridos
+    if (!nombre || !codigo) {
+      const response: ApiResponse = {
+        success: false,
+        message: 'Nombre y código son campos requeridos'
+      };
+      return res.status(400).json(response);
+    }
+
+    // Verificar si el código ya existe
+    const agencias = await AgenciasQueries.obtenerActivas();
+    const codigoExiste = agencias.some(ag => ag.codigo.toLowerCase() === codigo.toLowerCase());
+
+    if (codigoExiste) {
+      const response: ApiResponse = {
+        success: false,
+        message: `El código "${codigo}" ya está en uso`
+      };
+      return res.status(409).json(response);
+    }
+
+    // Crear agencia en la base de datos
+    const nuevaAgencia = await AgenciasQueries.crear({
+      nombre,
+      codigo,
+      direccion: direccion || '',
+      telefono: telefono || '',
+      email: email || '',
+      activa: true
+    });
+
+    console.log('✅ Agencia creada exitosamente:', nuevaAgencia);
+
+    const response: ApiResponse = {
+      success: true,
+      message: 'Agencia creada exitosamente',
+      data: nuevaAgencia
+    };
+
+    res.status(201).json(response);
+  } catch (error) {
+    console.error('❌ Error creando agencia:', error);
+
+    const response: ApiResponse = {
+      success: false,
+      message: 'Error al crear agencia',
+      error: error instanceof Error ? error.message : 'Error desconocido'
+    };
+
+    res.status(500).json(response);
+  }
+});
+
+/**
+ * PUT /api/turnos/agencias/:id
+ * Actualiza una agencia existente
+ */
+router.put('/agencias/:id', async (req: Request, res: Response) => {
+  try {
+    const agenciaId = parseInt(req.params.id);
+
+    if (isNaN(agenciaId)) {
+      const response: ApiResponse = {
+        success: false,
+        message: 'ID de agencia inválido'
+      };
+      return res.status(400).json(response);
+    }
+
+    console.log(`🏢 Actualizando agencia ${agenciaId}:`, req.body);
+
+    const { nombre, codigo, direccion, telefono, email, activa } = req.body;
+
+    // Si se está actualizando el código, verificar que no exista en otra agencia
+    if (codigo) {
+      const agencias = await AgenciasQueries.obtenerActivas();
+      const codigoExiste = agencias.some(ag =>
+        ag.codigo.toLowerCase() === codigo.toLowerCase() && ag.id !== agenciaId
+      );
+
+      if (codigoExiste) {
+        const response: ApiResponse = {
+          success: false,
+          message: `El código "${codigo}" ya está en uso por otra agencia`
+        };
+        return res.status(409).json(response);
+      }
+    }
+
+    // Actualizar agencia
+    const agenciaActualizada = await AgenciasQueries.actualizar(agenciaId, {
+      nombre,
+      codigo,
+      direccion,
+      telefono,
+      email,
+      activa
+    });
+
+    if (!agenciaActualizada) {
+      const response: ApiResponse = {
+        success: false,
+        message: 'Agencia no encontrada'
+      };
+      return res.status(404).json(response);
+    }
+
+    console.log('✅ Agencia actualizada exitosamente:', agenciaActualizada);
+
+    const response: ApiResponse = {
+      success: true,
+      message: 'Agencia actualizada exitosamente',
+      data: agenciaActualizada
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('❌ Error actualizando agencia:', error);
+
+    const response: ApiResponse = {
+      success: false,
+      message: 'Error al actualizar agencia',
+      error: error instanceof Error ? error.message : 'Error desconocido'
+    };
+
+    res.status(500).json(response);
+  }
+});
+
+/**
+ * DELETE /api/turnos/agencias/:id
+ * Desactiva una agencia (soft delete)
+ */
+router.delete('/agencias/:id', async (req: Request, res: Response) => {
+  try {
+    const agenciaId = parseInt(req.params.id);
+
+    if (isNaN(agenciaId)) {
+      const response: ApiResponse = {
+        success: false,
+        message: 'ID de agencia inválido'
+      };
+      return res.status(400).json(response);
+    }
+
+    console.log(`🗑️ Desactivando agencia ${agenciaId}`);
+
+    // Desactivar agencia (soft delete)
+    const agenciaDesactivada = await AgenciasQueries.actualizar(agenciaId, {
+      activa: false
+    });
+
+    if (!agenciaDesactivada) {
+      const response: ApiResponse = {
+        success: false,
+        message: 'Agencia no encontrada'
+      };
+      return res.status(404).json(response);
+    }
+
+    console.log('✅ Agencia desactivada exitosamente');
+
+    const response: ApiResponse = {
+      success: true,
+      message: 'Agencia desactivada exitosamente',
+      data: agenciaDesactivada
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('❌ Error desactivando agencia:', error);
+
+    const response: ApiResponse = {
+      success: false,
+      message: 'Error al desactivar agencia',
+      error: error instanceof Error ? error.message : 'Error desconocido'
+    };
+
     res.status(500).json(response);
   }
 });

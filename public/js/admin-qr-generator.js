@@ -8,6 +8,7 @@
   let sessionStartTime = Date.now();
   let sessionTimeInterval = null;
   let agencias = [];
+  let agenciaEditando = null;
   const logoImg = document.getElementById("logoImg");
   const adminUsername = document.getElementById("adminUsername");
   const errorMessage = document.getElementById("errorMessage");
@@ -255,6 +256,128 @@
       mostrarError("No se pudo copiar la URL al portapapeles");
     });
   }
+  function abrirModalNuevaAgencia() {
+    agenciaEditando = null;
+    const modal = document.getElementById("modalAgencia");
+    const modalTitle = document.getElementById("modalTitle");
+    const form = document.getElementById("formAgencia");
+    if (modalTitle) modalTitle.textContent = "Nueva Agencia";
+    if (form) form.reset();
+    mostrarErrorModal("");
+    if (modal) {
+      modal.style.display = "flex";
+    }
+  }
+  function abrirModalEditarAgencia() {
+    const selectAgencia = document.getElementById("selectAgencia");
+    if (!selectAgencia || !selectAgencia.value) {
+      mostrarError("Por favor selecciona una agencia primero");
+      return;
+    }
+    const agenciaId = parseInt(selectAgencia.value);
+    const agencia = agencias.find((ag) => ag.id === agenciaId);
+    if (!agencia) {
+      mostrarError("Agencia no encontrada");
+      return;
+    }
+    agenciaEditando = agencia;
+    const modal = document.getElementById("modalAgencia");
+    const modalTitle = document.getElementById("modalTitle");
+    if (modalTitle) modalTitle.textContent = "Editar Agencia";
+    const inputNombre = document.getElementById("inputNombre");
+    const inputCodigo = document.getElementById("inputCodigo");
+    const inputDireccion = document.getElementById("inputDireccion");
+    const inputTelefono = document.getElementById("inputTelefono");
+    const inputEmail = document.getElementById("inputEmail");
+    if (inputNombre) inputNombre.value = agencia.nombre;
+    if (inputCodigo) inputCodigo.value = agencia.codigo;
+    if (inputDireccion) inputDireccion.value = agencia.direccion || "";
+    if (inputTelefono) inputTelefono.value = agencia.telefono || "";
+    if (inputEmail) inputEmail.value = agencia.email || "";
+    mostrarErrorModal("");
+    if (modal) {
+      modal.style.display = "flex";
+    }
+  }
+  function cerrarModalAgencia() {
+    const modal = document.getElementById("modalAgencia");
+    if (modal) {
+      modal.style.display = "none";
+    }
+    agenciaEditando = null;
+  }
+  async function guardarAgencia(event) {
+    event.preventDefault();
+    const inputNombre = document.getElementById("inputNombre");
+    const inputCodigo = document.getElementById("inputCodigo");
+    const inputDireccion = document.getElementById("inputDireccion");
+    const inputTelefono = document.getElementById("inputTelefono");
+    const inputEmail = document.getElementById("inputEmail");
+    const datos = {
+      nombre: inputNombre?.value.trim(),
+      codigo: inputCodigo?.value.trim().toUpperCase(),
+      direccion: inputDireccion?.value.trim() || "",
+      telefono: inputTelefono?.value.trim() || "",
+      email: inputEmail?.value.trim() || ""
+    };
+    if (!datos.nombre || !datos.codigo) {
+      mostrarErrorModal("Nombre y c\xF3digo son campos requeridos");
+      return;
+    }
+    try {
+      let url = "/api/turnos/agencias";
+      let method = "POST";
+      if (agenciaEditando) {
+        url = `/api/turnos/agencias/${agenciaEditando.id}`;
+        method = "PUT";
+      }
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(datos)
+      });
+      const result = await response.json();
+      if (!result.success) {
+        mostrarErrorModal(result.message || "Error al guardar la agencia");
+        return;
+      }
+      console.log("\u2705 Agencia guardada exitosamente");
+      cerrarModalAgencia();
+      await cargarAgencias();
+      mostrarError("");
+      const successMsg = agenciaEditando ? "Agencia actualizada exitosamente" : "Agencia creada exitosamente";
+      const originalError = errorMessage?.textContent || "";
+      if (errorMessage) {
+        errorMessage.textContent = `\u2705 ${successMsg}`;
+        errorMessage.style.display = "block";
+        errorMessage.style.background = "linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)";
+        errorMessage.style.borderColor = "#22c55e";
+        errorMessage.style.color = "#166534";
+        setTimeout(() => {
+          errorMessage.style.display = "none";
+          errorMessage.style.background = "linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)";
+          errorMessage.style.borderColor = "#f87171";
+          errorMessage.style.color = "#991b1b";
+          errorMessage.textContent = originalError;
+        }, 3e3);
+      }
+    } catch (error) {
+      console.error("Error guardando agencia:", error);
+      mostrarErrorModal("Error al guardar la agencia. Por favor intenta nuevamente.");
+    }
+  }
+  function mostrarErrorModal(mensaje) {
+    const modalError = document.getElementById("modalError");
+    if (!modalError) return;
+    if (mensaje) {
+      modalError.textContent = mensaje;
+      modalError.style.display = "block";
+    } else {
+      modalError.style.display = "none";
+    }
+  }
   function logout() {
     if (confirm("\xBFEst\xE1s seguro de que quieres cerrar la sesi\xF3n?")) {
       sessionStorage.removeItem("admin_session_token");
@@ -276,6 +399,10 @@
   window.generarNuevoQR = generarNuevoQR;
   window.descargarQR = descargarQR;
   window.logout = logout;
+  window.abrirModalNuevaAgencia = abrirModalNuevaAgencia;
+  window.abrirModalEditarAgencia = abrirModalEditarAgencia;
+  window.cerrarModalAgencia = cerrarModalAgencia;
+  window.guardarAgencia = guardarAgencia;
   async function inicializar() {
     try {
       const sesionValida = await verificarSesion();
@@ -289,6 +416,10 @@
       const btnGenerarQR = document.getElementById("btnGenerarQR");
       const btnDescargarQR = document.getElementById("btnDescargarQR");
       const btnLogout = document.getElementById("btnLogout");
+      const btnNuevaAgencia = document.getElementById("btnNuevaAgencia");
+      const btnEditarAgencia = document.getElementById("btnEditarAgencia");
+      const btnCancelarModal = document.getElementById("btnCancelarModal");
+      const formAgencia = document.getElementById("formAgencia");
       if (btnGenerarQR) {
         btnGenerarQR.addEventListener("click", () => generarNuevoQR());
       }
@@ -297,6 +428,26 @@
       }
       if (btnLogout) {
         btnLogout.addEventListener("click", logout);
+      }
+      if (btnNuevaAgencia) {
+        btnNuevaAgencia.addEventListener("click", abrirModalNuevaAgencia);
+      }
+      if (btnEditarAgencia) {
+        btnEditarAgencia.addEventListener("click", abrirModalEditarAgencia);
+      }
+      if (btnCancelarModal) {
+        btnCancelarModal.addEventListener("click", cerrarModalAgencia);
+      }
+      if (formAgencia) {
+        formAgencia.addEventListener("submit", guardarAgencia);
+      }
+      const modal = document.getElementById("modalAgencia");
+      if (modal) {
+        modal.addEventListener("click", (e) => {
+          if (e.target === modal) {
+            cerrarModalAgencia();
+          }
+        });
       }
       console.log("\u2705 Event listeners configurados correctamente");
       actualizarTiempoSesion();

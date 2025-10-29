@@ -1,8 +1,9 @@
 import { Router, Request, Response } from 'express';
-import { 
-  generarTokenTurno, 
-  verificarTokenTurno, 
-  generarTokenAcceso, 
+import {
+  generarTokenTurno,
+  verificarTokenTurno,
+  generarTokenAcceso,
+  generarTokenAccesoPermanente,
   verificarTokenAcceso,
   generarTokenSesionAdmin,
   verificarTokenSesionAdmin
@@ -109,13 +110,14 @@ router.get('/generar-acceso', (req: Request, res: Response) => {
 
 /**
  * POST /api/token/generar-acceso
- * Genera un token temporal para acceder al formulario con agencia específica
+ * Genera un token PERMANENTE para acceder al formulario con agencia específica
+ * Este token es para QR codes impresos que nunca expiran
  */
 router.post('/generar-acceso', (req: Request, res: Response) => {
   try {
     const { agenciaId } = req.body;
 
-    console.log('🔑 Generando token de acceso para agencia:', agenciaId);
+    console.log('🔑 Generando token de acceso PERMANENTE para agencia:', agenciaId);
 
     if (!agenciaId) {
       return res.status(400).json({
@@ -124,16 +126,17 @@ router.post('/generar-acceso', (req: Request, res: Response) => {
       });
     }
 
-    const token = generarTokenAcceso();
+    // Generar token PERMANENTE (sin expiración) para QR impreso
+    const token = generarTokenAccesoPermanente(agenciaId);
 
-    console.log('✅ Token generado exitosamente');
+    console.log('✅ Token permanente generado exitosamente');
 
     res.json({
       success: true,
       data: {
         token,
         agenciaId,
-        expiresIn: '15 minutos'
+        expiresIn: 'Nunca (token permanente)'
       }
     });
   } catch (error) {

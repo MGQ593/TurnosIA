@@ -103,6 +103,7 @@ export function tokenHaExpirado(token: string): boolean {
 export interface AccesoTokenPayload {
   tipo: 'acceso-formulario';
   timestamp: number;
+  agenciaId?: number; // ID de agencia para tokens permanentes
 }
 
 /**
@@ -111,7 +112,7 @@ export interface AccesoTokenPayload {
  */
 export function generarTokenAcceso(): string {
   const expirationMinutes = parseInt(process.env.ACCESS_TOKEN_EXPIRATION_MINUTES || '15', 10);
-  
+
   const payload: AccesoTokenPayload = {
     tipo: 'acceso-formulario',
     timestamp: Date.now()
@@ -124,6 +125,30 @@ export function generarTokenAcceso(): string {
   });
 
   console.log(`🔑 Token de acceso generado (expira en ${expirationMinutes} minutos)`);
+  return token;
+}
+
+/**
+ * Genera un token PERMANENTE de acceso al formulario (sin expiración)
+ * Para usar en QR codes impresos que no pueden cambiar
+ *
+ * @param agenciaId - ID numérico de la agencia (opcional)
+ * @returns Token JWT sin fecha de expiración
+ */
+export function generarTokenAccesoPermanente(agenciaId?: number): string {
+  const payload: AccesoTokenPayload = {
+    tipo: 'acceso-formulario',
+    timestamp: Date.now(),
+    agenciaId
+  };
+
+  // Token SIN expiresIn = token permanente (nunca expira)
+  const token = jwt.sign(payload, JWT_SECRET, {
+    issuer: 'sistema-turnos',
+    subject: 'acceso-formulario'
+  });
+
+  console.log(`🔑 Token de acceso PERMANENTE generado (sin expiración)${agenciaId ? ` para agencia ${agenciaId}` : ''}`);
   return token;
 }
 
