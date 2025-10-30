@@ -438,16 +438,10 @@ function abrirModalEditarAgencia(): void {
 
   // Llenar el formulario con los datos de la agencia
   const inputNombre = document.getElementById('inputNombre') as HTMLInputElement;
-  const inputCodigo = document.getElementById('inputCodigo') as HTMLInputElement;
   const inputDireccion = document.getElementById('inputDireccion') as HTMLInputElement;
-  const inputTelefono = document.getElementById('inputTelefono') as HTMLInputElement;
-  const inputEmail = document.getElementById('inputEmail') as HTMLInputElement;
 
   if (inputNombre) inputNombre.value = agencia.nombre;
-  if (inputCodigo) inputCodigo.value = agencia.codigo;
   if (inputDireccion) inputDireccion.value = agencia.direccion || '';
-  if (inputTelefono) inputTelefono.value = agencia.telefono || '';
-  if (inputEmail) inputEmail.value = agencia.email || '';
 
   // Limpiar errores
   mostrarErrorModal('');
@@ -475,21 +469,15 @@ async function guardarAgencia(event: Event): Promise<void> {
   event.preventDefault();
 
   const inputNombre = document.getElementById('inputNombre') as HTMLInputElement;
-  const inputCodigo = document.getElementById('inputCodigo') as HTMLInputElement;
   const inputDireccion = document.getElementById('inputDireccion') as HTMLInputElement;
-  const inputTelefono = document.getElementById('inputTelefono') as HTMLInputElement;
-  const inputEmail = document.getElementById('inputEmail') as HTMLInputElement;
 
   const datos = {
     nombre: inputNombre?.value.trim(),
-    codigo: inputCodigo?.value.trim().toUpperCase(),
-    direccion: inputDireccion?.value.trim() || '',
-    telefono: inputTelefono?.value.trim() || '',
-    email: inputEmail?.value.trim() || ''
+    direccion: inputDireccion?.value.trim() || ''
   };
 
-  if (!datos.nombre || !datos.codigo) {
-    mostrarErrorModal('Nombre y código son campos requeridos');
+  if (!datos.nombre) {
+    mostrarErrorModal('El nombre es requerido');
     return;
   }
 

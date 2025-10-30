@@ -285,15 +285,9 @@
     const modalTitle = document.getElementById("modalTitle");
     if (modalTitle) modalTitle.textContent = "Editar Agencia";
     const inputNombre = document.getElementById("inputNombre");
-    const inputCodigo = document.getElementById("inputCodigo");
     const inputDireccion = document.getElementById("inputDireccion");
-    const inputTelefono = document.getElementById("inputTelefono");
-    const inputEmail = document.getElementById("inputEmail");
     if (inputNombre) inputNombre.value = agencia.nombre;
-    if (inputCodigo) inputCodigo.value = agencia.codigo;
     if (inputDireccion) inputDireccion.value = agencia.direccion || "";
-    if (inputTelefono) inputTelefono.value = agencia.telefono || "";
-    if (inputEmail) inputEmail.value = agencia.email || "";
     mostrarErrorModal("");
     if (modal) {
       modal.style.display = "flex";
@@ -309,19 +303,13 @@
   async function guardarAgencia(event) {
     event.preventDefault();
     const inputNombre = document.getElementById("inputNombre");
-    const inputCodigo = document.getElementById("inputCodigo");
     const inputDireccion = document.getElementById("inputDireccion");
-    const inputTelefono = document.getElementById("inputTelefono");
-    const inputEmail = document.getElementById("inputEmail");
     const datos = {
       nombre: inputNombre?.value.trim(),
-      codigo: inputCodigo?.value.trim().toUpperCase(),
-      direccion: inputDireccion?.value.trim() || "",
-      telefono: inputTelefono?.value.trim() || "",
-      email: inputEmail?.value.trim() || ""
+      direccion: inputDireccion?.value.trim() || ""
     };
-    if (!datos.nombre || !datos.codigo) {
-      mostrarErrorModal("Nombre y c\xF3digo son campos requeridos");
+    if (!datos.nombre) {
+      mostrarErrorModal("El nombre es requerido");
       return;
     }
     try {

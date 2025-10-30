@@ -61,32 +61,48 @@ export class AgenciasQueries {
 
   /**
    * Crea una nueva agencia
+   * El código se genera automáticamente como: iniciales del nombre + ID (ej: MA003)
    */
   static async crear(agencia: CrearAgenciaRequest): Promise<Agencia> {
-    // Generar código de agencia automático basado en el nombre
-    const codigoAgencia = agencia.nombre.substring(0, 3).toUpperCase().replace(/\s/g, '') + 
-                         Date.now().toString().slice(-3);
-    const codigoTurno = agencia.nombre.charAt(0).toUpperCase();
-    
+    // Primero insertar con un código temporal
+    const codigoTemporal = 'TEMP_' + Date.now();
+
     const result = await query(`
-      INSERT INTO agencias (nombre, codigo, codigo_turno, direccion, telefono, email, 
-                           whatsapp_validation_url, activo)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING id, nombre, codigo, direccion, telefono, email, 
-                whatsapp_validation_url as whatsapp, activo as activa, 
+      INSERT INTO agencias (nombre, codigo, direccion, activa)
+      VALUES ($1, $2, $3, $4)
+      RETURNING id, nombre, codigo, direccion,
+                activa,
                 created_at, updated_at
     `, [
       agencia.nombre,
-      codigoAgencia,
-      codigoTurno,
-      agencia.direccion,
-      agencia.telefono,
-      agencia.email,
-      agencia.whatsapp || '',
+      codigoTemporal,
+      agencia.direccion || '',
       agencia.activa ?? true
     ]);
-    
-    return result.rows[0];
+
+    const nuevaAgencia = result.rows[0];
+
+    // Generar código final: primeras 2 letras del nombre + ID con 3 dígitos
+    // Ejemplo: "Manta" -> "MA003" (si ID es 3)
+    const iniciales = agencia.nombre
+      .substring(0, 2)
+      .toUpperCase()
+      .replace(/\s/g, '');
+    const codigoFinal = iniciales + nuevaAgencia.id.toString().padStart(3, '0');
+
+    // Actualizar con el código final
+    const updateResult = await query(`
+      UPDATE agencias
+      SET codigo = $1
+      WHERE id = $2
+      RETURNING id, nombre, codigo, direccion,
+                activa,
+                created_at, updated_at
+    `, [codigoFinal, nuevaAgencia.id]);
+
+    console.log(`✅ Agencia creada con código: ${codigoFinal}`);
+
+    return updateResult.rows[0];
   }
 
   /**
@@ -105,20 +121,8 @@ export class AgenciasQueries {
       campos.push(`direccion = $${contador++}`);
       valores.push(cambios.direccion);
     }
-    if (cambios.telefono !== undefined) {
-      campos.push(`telefono = $${contador++}`);
-      valores.push(cambios.telefono);
-    }
-    if (cambios.email !== undefined) {
-      campos.push(`email = $${contador++}`);
-      valores.push(cambios.email);
-    }
-    if (cambios.whatsapp !== undefined) {
-      campos.push(`whatsapp_validation_url = $${contador++}`);
-      valores.push(cambios.whatsapp);
-    }
     if (cambios.activa !== undefined) {
-      campos.push(`activo = $${contador++}`);
+      campos.push(`activa = $${contador++}`);
       valores.push(cambios.activa);
     }
 
@@ -130,11 +134,11 @@ export class AgenciasQueries {
     valores.push(id);
 
     const result = await query(`
-      UPDATE agencias 
+      UPDATE agencias
       SET ${campos.join(', ')}
       WHERE id = $${contador}
-      RETURNING id, nombre, codigo, direccion, telefono, email, 
-                whatsapp_validation_url as whatsapp, activo as activa, 
+      RETURNING id, nombre, codigo, direccion, telefono, email,
+                activa,
                 created_at, updated_at
     `, valores);
     

@@ -3,7 +3,7 @@ import { TurnosQueries, ClientesQueries, AgenciasQueries } from '../../db/querie
 import { SolicitarTurnoRequest, TurnoCreatedResponse, ApiResponse } from '../../types';
 import { z } from 'zod';
 import QRCode from 'qrcode';
-import { enviarTurnoWebhook } from '../../services/webhookService';
+import { enviarTurnoWebhook, enviarAsignacionTurnoWebhook } from '../../services/webhookService';
 
 const router = Router();
 
@@ -68,36 +68,22 @@ router.post('/agencias', async (req: Request, res: Response) => {
   try {
     console.log('🏢 Creando nueva agencia:', req.body);
 
-    const { nombre, codigo, direccion, telefono, email } = req.body;
+    const { nombre, direccion } = req.body;
 
-    // Validar campos requeridos
-    if (!nombre || !codigo) {
+    // Validar campo requerido
+    if (!nombre) {
       const response: ApiResponse = {
         success: false,
-        message: 'Nombre y código son campos requeridos'
+        message: 'El nombre es requerido'
       };
       return res.status(400).json(response);
     }
 
-    // Verificar si el código ya existe
-    const agencias = await AgenciasQueries.obtenerActivas();
-    const codigoExiste = agencias.some(ag => ag.codigo.toLowerCase() === codigo.toLowerCase());
-
-    if (codigoExiste) {
-      const response: ApiResponse = {
-        success: false,
-        message: `El código "${codigo}" ya está en uso`
-      };
-      return res.status(409).json(response);
-    }
-
     // Crear agencia en la base de datos
+    // El código se genera automáticamente en la función crear()
     const nuevaAgencia = await AgenciasQueries.crear({
       nombre,
-      codigo,
-      direccion: direccion || '',
-      telefono: telefono || '',
-      email: email || '',
+      direccion,
       activa: true
     });
 
@@ -141,31 +127,12 @@ router.put('/agencias/:id', async (req: Request, res: Response) => {
 
     console.log(`🏢 Actualizando agencia ${agenciaId}:`, req.body);
 
-    const { nombre, codigo, direccion, telefono, email, activa } = req.body;
+    const { nombre, direccion, activa } = req.body;
 
-    // Si se está actualizando el código, verificar que no exista en otra agencia
-    if (codigo) {
-      const agencias = await AgenciasQueries.obtenerActivas();
-      const codigoExiste = agencias.some(ag =>
-        ag.codigo.toLowerCase() === codigo.toLowerCase() && ag.id !== agenciaId
-      );
-
-      if (codigoExiste) {
-        const response: ApiResponse = {
-          success: false,
-          message: `El código "${codigo}" ya está en uso por otra agencia`
-        };
-        return res.status(409).json(response);
-      }
-    }
-
-    // Actualizar agencia
+    // Actualizar agencia (el código no se puede cambiar una vez creado)
     const agenciaActualizada = await AgenciasQueries.actualizar(agenciaId, {
       nombre,
-      codigo,
       direccion,
-      telefono,
-      email,
       activa
     });
 
@@ -625,6 +592,23 @@ router.post('/webhook/asignar-turno', async (req: Request, res: Response) => {
     }
 
     console.log(`✅ Turno ID ${id_turno} (${turnoAsignado.numero_turno}) asignado a ${modulo} - ${asesor}`);
+
+    // Enviar notificación de asignación al webhook de n8n
+    const webhookResultado = await enviarAsignacionTurnoWebhook({
+      id_turno: turnoAsignado.id,
+      numero_turno: turnoAsignado.numero_turno,
+      agencia_id: turnoAsignado.agencia_id,
+      modulo: turnoAsignado.modulo || '',
+      asesor: turnoAsignado.asesor || '',
+      estado: turnoAsignado.estado,
+      fecha_asignacion: turnoAsignado.fecha_asignacion || new Date()
+    });
+
+    if (webhookResultado.success) {
+      console.log(`✅ Notificación de asignación enviada correctamente en ${webhookResultado.attempts} intento(s)`);
+    } else {
+      console.warn(`⚠️ No se pudo enviar la notificación de asignación: ${webhookResultado.message}`);
+    }
 
     const response: ApiResponse = {
       success: true,

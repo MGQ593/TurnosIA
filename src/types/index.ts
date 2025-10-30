@@ -58,21 +58,13 @@ export interface CrearClienteRequest {
 
 export interface CrearAgenciaRequest {
   nombre: string;
-  codigo: string;
-  direccion: string;
-  telefono: string;
-  email: string;
-  whatsapp?: string;
+  direccion?: string;
   activa?: boolean;
 }
 
 export interface ActualizarAgenciaRequest {
   nombre?: string;
-  codigo?: string;
   direccion?: string;
-  telefono?: string;
-  email?: string;
-  whatsapp?: string;
   activa?: boolean;
 }
 
