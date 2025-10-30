@@ -266,7 +266,11 @@ export class TurnosQueries {
     const result = await query(`
       SELECT estado, modulo, asesor, fecha_asignacion
       FROM turnos_ia.turnos
-      WHERE numero_turno = $1 AND agencia_id = $2
+      WHERE numero_turno = $1
+        AND agencia_id = $2
+        AND DATE(created_at) = CURRENT_DATE
+      ORDER BY created_at DESC
+      LIMIT 1
     `, [numeroTurno, agenciaId]);
 
     if (result.rows.length === 0) {
