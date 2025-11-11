@@ -3,7 +3,7 @@ import { TurnosQueries, ClientesQueries, AgenciasQueries } from '../../db/querie
 import { SolicitarTurnoRequest, TurnoCreatedResponse, ApiResponse } from '../../types';
 import { z } from 'zod';
 import QRCode from 'qrcode';
-import { enviarTurnoWebhook, enviarAsignacionTurnoWebhook } from '../../services/webhookService';
+import { enviarTurnoWebhook, enviarAsignacionTurnoWebhook, enviarFinalizacionTurnoWebhook } from '../../services/webhookService';
 
 const router = Router();
 
@@ -627,6 +627,106 @@ router.post('/webhook/asignar-turno', async (req: Request, res: Response) => {
     res.json(response);
   } catch (error) {
     console.error('Error asignando turno:', error);
+
+    const response: ApiResponse = {
+      success: false,
+      message: 'Error interno del servidor',
+      error: error instanceof Error ? error.message : 'Error desconocido'
+    };
+
+    res.status(500).json(response);
+  }
+});
+
+/**
+ * POST /api/webhook/finalizar-turno
+ * Webhook para finalizar un turno después de ser atendido
+ * Este endpoint es llamado por sistemas externos cuando un turno ha sido completamente atendido
+ */
+router.post('/webhook/finalizar-turno', async (req: Request, res: Response) => {
+  try {
+    console.log('📥 Webhook de finalización recibido:', req.body);
+
+    // Validar datos
+    const finalizarSchema = z.object({
+      id_turno: z.number().int().positive('ID de turno es requerido'),
+      observaciones: z.string().optional()
+    });
+
+    const validationResult = finalizarSchema.safeParse(req.body);
+
+    if (!validationResult.success) {
+      console.error('❌ Validación fallida:', validationResult.error.errors);
+      const response: ApiResponse = {
+        success: false,
+        message: 'Datos de entrada inválidos',
+        error: validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
+      };
+      return res.status(400).json(response);
+    }
+
+    const { id_turno, observaciones } = validationResult.data;
+
+    // Finalizar turno
+    const turnoFinalizado = await TurnosQueries.finalizarTurno(id_turno, observaciones);
+
+    if (!turnoFinalizado) {
+      // Si no se pudo finalizar, verificar si el turno existe
+      const turnoExistente = await TurnosQueries.obtenerTurnoPorId(id_turno);
+
+      if (!turnoExistente) {
+        const response: ApiResponse = {
+          success: false,
+          message: `El turno con ID ${id_turno} no existe.`
+        };
+        return res.status(200).json(response);
+      }
+
+      // Si el turno existe pero no está en estado 'llamado'
+      const response: ApiResponse = {
+        success: false,
+        message: `El turno ${turnoExistente.numero_turno} no puede ser finalizado. Estado actual: ${turnoExistente.estado}.`
+      };
+      return res.status(200).json(response);
+    }
+
+    console.log(`✅ Turno ID ${id_turno} (${turnoFinalizado.numero_turno}) finalizado`);
+
+    // Enviar notificación de finalización al webhook de n8n
+    const webhookResultado = await enviarFinalizacionTurnoWebhook({
+      id_turno: turnoFinalizado.id,
+      numero_turno: turnoFinalizado.numero_turno,
+      agencia_id: turnoFinalizado.agencia_id,
+      modulo: turnoFinalizado.modulo || '',
+      asesor: turnoFinalizado.asesor || '',
+      estado: turnoFinalizado.estado,
+      fecha_finalizacion: turnoFinalizado.updated_at,
+      tiempo_atencion_minutos: turnoFinalizado.tiempo_atencion_minutos || 0,
+      observaciones: turnoFinalizado.observaciones || undefined
+    });
+
+    if (webhookResultado.success) {
+      console.log(`✅ Notificación de finalización enviada correctamente en ${webhookResultado.attempts} intento(s)`);
+    } else {
+      console.warn(`⚠️ No se pudo enviar notificación de finalización: ${webhookResultado.message}`);
+    }
+
+    const response: ApiResponse = {
+      success: true,
+      message: 'Turno finalizado correctamente',
+      data: {
+        id_turno: turnoFinalizado.id,
+        numero_turno: turnoFinalizado.numero_turno,
+        agencia_id: turnoFinalizado.agencia_id,
+        estado: turnoFinalizado.estado,
+        fecha_finalizacion: turnoFinalizado.updated_at,
+        tiempo_atencion_minutos: turnoFinalizado.tiempo_atencion_minutos
+      }
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error finalizando turno:', error);
 
     const response: ApiResponse = {
       success: false,
