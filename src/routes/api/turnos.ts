@@ -3,7 +3,7 @@ import { TurnosQueries, ClientesQueries, AgenciasQueries } from '../../db/querie
 import { SolicitarTurnoRequest, TurnoCreatedResponse, ApiResponse } from '../../types';
 import { z } from 'zod';
 import QRCode from 'qrcode';
-import { enviarTurnoWebhook, enviarAsignacionTurnoWebhook, enviarFinalizacionTurnoWebhook } from '../../services/webhookService';
+import { enviarTurnoWebhook, enviarAsignacionTurnoWebhook, enviarFinalizacionTurnoWebhook, enviarCancelacionTurnoWebhook } from '../../services/webhookService';
 
 const router = Router();
 
@@ -727,6 +727,105 @@ router.post('/webhook/finalizar-turno', async (req: Request, res: Response) => {
     res.json(response);
   } catch (error) {
     console.error('Error finalizando turno:', error);
+
+    const response: ApiResponse = {
+      success: false,
+      message: 'Error interno del servidor',
+      error: error instanceof Error ? error.message : 'Error desconocido'
+    };
+
+    res.status(500).json(response);
+  }
+});
+
+/**
+ * POST /api/webhook/cancelar-turno
+ * Webhook para cancelar un turno cuando el cliente no se presenta
+ * Este endpoint es llamado por sistemas externos cuando un cliente no acude a su cita
+ */
+router.post('/webhook/cancelar-turno', async (req: Request, res: Response) => {
+  try {
+    console.log('📥 Webhook de cancelación recibido:', req.body);
+
+    // Validar datos
+    const cancelarSchema = z.object({
+      id_turno: z.number().int().positive('ID de turno es requerido'),
+      motivo: z.string().optional()
+    });
+
+    const validationResult = cancelarSchema.safeParse(req.body);
+
+    if (!validationResult.success) {
+      console.error('❌ Validación fallida:', validationResult.error.errors);
+      const response: ApiResponse = {
+        success: false,
+        message: 'Datos de entrada inválidos',
+        error: validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
+      };
+      return res.status(400).json(response);
+    }
+
+    const { id_turno, motivo } = validationResult.data;
+
+    // Cancelar turno
+    const turnoCancelado = await TurnosQueries.cancelarTurno(id_turno, motivo);
+
+    if (!turnoCancelado) {
+      // Si no se pudo cancelar, verificar si el turno existe
+      const turnoExistente = await TurnosQueries.obtenerTurnoPorId(id_turno);
+
+      if (!turnoExistente) {
+        const response: ApiResponse = {
+          success: false,
+          message: `El turno con ID ${id_turno} no existe.`
+        };
+        return res.status(200).json(response);
+      }
+
+      // Si el turno existe pero no está en estado válido para cancelar
+      const response: ApiResponse = {
+        success: false,
+        message: `El turno ${turnoExistente.numero_turno} no puede ser cancelado. Estado actual: ${turnoExistente.estado}.`
+      };
+      return res.status(200).json(response);
+    }
+
+    console.log(`✅ Turno ID ${id_turno} (${turnoCancelado.numero_turno}) cancelado`);
+
+    // Enviar notificación de cancelación al webhook de n8n
+    const webhookResultado = await enviarCancelacionTurnoWebhook({
+      id_turno: turnoCancelado.id,
+      numero_turno: turnoCancelado.numero_turno,
+      agencia_id: turnoCancelado.agencia_id,
+      modulo: turnoCancelado.modulo || undefined,
+      asesor: turnoCancelado.asesor || undefined,
+      estado: turnoCancelado.estado,
+      fecha_cancelacion: turnoCancelado.updated_at,
+      motivo: turnoCancelado.observaciones || undefined
+    });
+
+    if (webhookResultado.success) {
+      console.log(`✅ Notificación de cancelación enviada correctamente en ${webhookResultado.attempts} intento(s)`);
+    } else {
+      console.warn(`⚠️ No se pudo enviar notificación de cancelación: ${webhookResultado.message}`);
+    }
+
+    const response: ApiResponse = {
+      success: true,
+      message: 'Turno cancelado correctamente',
+      data: {
+        id_turno: turnoCancelado.id,
+        numero_turno: turnoCancelado.numero_turno,
+        agencia_id: turnoCancelado.agencia_id,
+        estado: turnoCancelado.estado,
+        fecha_cancelacion: turnoCancelado.updated_at,
+        motivo: turnoCancelado.observaciones
+      }
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Error cancelando turno:', error);
 
     const response: ApiResponse = {
       success: false,

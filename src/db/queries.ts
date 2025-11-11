@@ -409,6 +409,36 @@ export class TurnosQueries {
   }
 
   /**
+   * Cancela un turno por su ID
+   * Cambia el estado a 'cancelado' cuando el cliente no se presenta
+   * @param idTurno ID del turno
+   * @param motivo Motivo de la cancelación
+   * @returns Información del turno cancelado o null si no existe o ya está finalizado/cancelado
+   */
+  static async cancelarTurno(idTurno: number, motivo?: string): Promise<Turno | null> {
+    const result = await query(`
+      UPDATE turnos_ia.turnos
+      SET estado = 'cancelado',
+          observaciones = $1,
+          updated_at = NOW()
+      WHERE id = $2
+        AND estado IN ('pendiente', 'llamado')
+      RETURNING id, cliente_id, agencia_id, numero_turno, fecha_hora,
+                estado, prioridad, origen, modulo, asesor,
+                fecha_asignacion, tiempo_espera_minutos, tiempo_atencion_minutos,
+                observaciones, created_at, updated_at
+    `, [motivo || null, idTurno]);
+
+    if (result.rows.length > 0) {
+      console.log('✅ Turno cancelado:', result.rows[0]);
+      return result.rows[0];
+    }
+
+    console.warn(`⚠️ No se encontró turno con ID ${idTurno} en estado válido para cancelar`);
+    return null;
+  }
+
+  /**
    * Genera el siguiente número de turno para el día actual y agencia específica
    * Formato: T001 a T999 (por agencia, por día)
    */
