@@ -259,6 +259,9 @@ export class TurnosQueries {
    */
   static async obtenerEstadoAsignacion(numeroTurno: string, agenciaId: number): Promise<{
     asignado: boolean;
+    finalizado: boolean;
+    cancelado: boolean;
+    estado: string;
     modulo?: string;
     asesor?: string;
     fecha_asignacion?: Date;
@@ -278,12 +281,17 @@ export class TurnosQueries {
     }
 
     const row = result.rows[0];
-    
-    // Solo está asignado si el estado es 'llamado' (ya no es 'pendiente')
-    const asignado = row.estado === 'llamado';
+
+    // Determinar estados
+    const asignado = row.estado === 'llamado' || row.estado === 'finalizado';
+    const finalizado = row.estado === 'finalizado';
+    const cancelado = row.estado === 'cancelado';
 
     return {
       asignado,
+      finalizado,
+      cancelado,
+      estado: row.estado,
       modulo: row.modulo || undefined,
       asesor: row.asesor || undefined,
       fecha_asignacion: row.fecha_asignacion || undefined

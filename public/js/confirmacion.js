@@ -134,6 +134,107 @@
     </div>
   `;
   }
+  function mostrarTurnoCancelado() {
+    document.body.innerHTML = `
+    <style>
+      @keyframes float {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(25px, 25px) scale(1.05); }
+      }
+
+      @media (max-width: 768px) {
+        .cancel-container {
+          padding: 24px 16px !important;
+        }
+        .cancel-card {
+          padding: 32px 24px !important;
+          max-width: 100% !important;
+          width: calc(100vw - 32px) !important;
+        }
+        .cancel-logo {
+          max-width: 180px !important;
+          margin-bottom: 24px !important;
+        }
+        .cancel-icon {
+          font-size: 56px !important;
+        }
+        .cancel-title {
+          font-size: 24px !important;
+        }
+        .cancel-text {
+          font-size: 15px !important;
+        }
+      }
+    </style>
+    <div class="cancel-container" style="
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      height: 100vh;
+      background: #02539A;
+      text-align: center;
+      padding: 40px 20px;
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      overflow: hidden;
+    ">
+      <div class="cancel-card" style="
+        background: rgba(255, 255, 255, 0.96);
+        backdrop-filter: blur(20px);
+        padding: 48px;
+        border-radius: 24px;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        box-shadow: 0 24px 48px rgba(15, 23, 42, 0.25);
+        color: #0f172a;
+        max-width: 500px;
+        width: 100%;
+        position: relative;
+        z-index: 1;
+      ">
+        <img
+          class="cancel-logo"
+          src="${DEFAULT_LOGO_URL}"
+          alt="ChevyPlan Logo"
+          style="
+            max-width: 200px;
+            width: 100%;
+            height: auto;
+            margin: 0 auto 32px;
+            display: block;
+          "
+        >
+        <div class="cancel-icon" style="font-size: 64px; margin-bottom: 24px;">\u26A0\uFE0F</div>
+        <h1 class="cancel-title" style="margin-bottom: 16px; font-size: 28px; font-weight: 700; color: #0f172a;">Turno Cancelado</h1>
+        <p class="cancel-text" style="margin-bottom: 24px; color: #475569; line-height: 1.6; font-size: 16px;">
+          Tu turno ha sido cancelado. Por favor, solicita un nuevo turno si deseas ser atendido.
+        </p>
+        <p style="font-size: 14px; color: #64748b; margin-bottom: 8px;">
+          Esta ventana se cerrar\xE1 autom\xE1ticamente en <span id="countdown">10</span> segundos.
+        </p>
+        <p style="font-size: 12px; color: #94a3b8; margin-bottom: 0;">
+          Tambi\xE9n puedes cerrar esta ventana manualmente.
+        </p>
+      </div>
+    </div>
+  `;
+    let segundosRestantes = 10;
+    const countdownElement = document.getElementById("countdown");
+    const intervalo = setInterval(() => {
+      segundosRestantes--;
+      if (countdownElement) {
+        countdownElement.textContent = segundosRestantes.toString();
+      }
+      if (segundosRestantes <= 0) {
+        clearInterval(intervalo);
+        cerrarVentana();
+      }
+    }, 1e3);
+  }
   function mostrarSesionFinalizada() {
     document.body.innerHTML = `
     <style>
@@ -360,20 +461,31 @@
   }
   async function verificarAsignacionTurno(numeroTurno, agenciaId) {
     console.log(`\u{1F504} Iniciando polling para turno: ${numeroTurno} de agencia ${agenciaId}`);
+    let asignacionMostrada = false;
     const intervalo = setInterval(async () => {
       try {
         console.log(`\u{1F50D} Consultando estado del turno ${numeroTurno} de agencia ${agenciaId}...`);
         const response = await fetch(`/api/turnos/estado/${encodeURIComponent(numeroTurno)}?agenciaId=${agenciaId}`);
         const data = await response.json();
-        if (data.success && data.data?.asignado) {
+        if (!data.success || !data.data) {
+          return;
+        }
+        if (data.data.cancelado) {
           clearInterval(intervalo);
+          console.log("\u274C Turno cancelado");
+          mostrarTurnoCancelado();
+          return;
+        }
+        if (data.data.finalizado) {
+          clearInterval(intervalo);
+          console.log("\u2705 Turno finalizado");
+          mostrarSesionFinalizada();
+          return;
+        }
+        if (data.data.asignado && !asignacionMostrada) {
+          asignacionMostrada = true;
           console.log("\u2705 Turno asignado:", data.data);
           mostrarAsignacion(data.data.modulo, data.data.asesor);
-          const displayTime = ASIGNACION_DISPLAY_TIME_SECONDS * 1e3;
-          console.log(`\u23F1\uFE0F Esperando ${ASIGNACION_DISPLAY_TIME_SECONDS} segundos antes de redirigir...`);
-          setTimeout(() => {
-            mostrarSesionFinalizada();
-          }, displayTime);
         }
       } catch (error) {
         console.error("\u274C Error consultando estado del turno:", error);

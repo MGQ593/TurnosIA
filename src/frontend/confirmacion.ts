@@ -195,6 +195,115 @@ function mostrarErrorToken(mensaje: string): void {
 }
 
 /**
+ * Muestra la página de turno cancelado
+ */
+function mostrarTurnoCancelado(): void {
+  document.body.innerHTML = `
+    <style>
+      @keyframes float {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(25px, 25px) scale(1.05); }
+      }
+
+      @media (max-width: 768px) {
+        .cancel-container {
+          padding: 24px 16px !important;
+        }
+        .cancel-card {
+          padding: 32px 24px !important;
+          max-width: 100% !important;
+          width: calc(100vw - 32px) !important;
+        }
+        .cancel-logo {
+          max-width: 180px !important;
+          margin-bottom: 24px !important;
+        }
+        .cancel-icon {
+          font-size: 56px !important;
+        }
+        .cancel-title {
+          font-size: 24px !important;
+        }
+        .cancel-text {
+          font-size: 15px !important;
+        }
+      }
+    </style>
+    <div class="cancel-container" style="
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      height: 100vh;
+      background: #02539A;
+      text-align: center;
+      padding: 40px 20px;
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      overflow: hidden;
+    ">
+      <div class="cancel-card" style="
+        background: rgba(255, 255, 255, 0.96);
+        backdrop-filter: blur(20px);
+        padding: 48px;
+        border-radius: 24px;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        box-shadow: 0 24px 48px rgba(15, 23, 42, 0.25);
+        color: #0f172a;
+        max-width: 500px;
+        width: 100%;
+        position: relative;
+        z-index: 1;
+      ">
+        <img
+          class="cancel-logo"
+          src="${DEFAULT_LOGO_URL}"
+          alt="ChevyPlan Logo"
+          style="
+            max-width: 200px;
+            width: 100%;
+            height: auto;
+            margin: 0 auto 32px;
+            display: block;
+          "
+        >
+        <div class="cancel-icon" style="font-size: 64px; margin-bottom: 24px;">⚠️</div>
+        <h1 class="cancel-title" style="margin-bottom: 16px; font-size: 28px; font-weight: 700; color: #0f172a;">Turno Cancelado</h1>
+        <p class="cancel-text" style="margin-bottom: 24px; color: #475569; line-height: 1.6; font-size: 16px;">
+          Tu turno ha sido cancelado. Por favor, solicita un nuevo turno si deseas ser atendido.
+        </p>
+        <p style="font-size: 14px; color: #64748b; margin-bottom: 8px;">
+          Esta ventana se cerrará automáticamente en <span id="countdown">10</span> segundos.
+        </p>
+        <p style="font-size: 12px; color: #94a3b8; margin-bottom: 0;">
+          También puedes cerrar esta ventana manualmente.
+        </p>
+      </div>
+    </div>
+  `;
+
+  // Iniciar cuenta regresiva y cerrar ventana después de 10 segundos
+  let segundosRestantes = 10;
+  const countdownElement = document.getElementById('countdown');
+
+  const intervalo = setInterval(() => {
+    segundosRestantes--;
+    if (countdownElement) {
+      countdownElement.textContent = segundosRestantes.toString();
+    }
+
+    if (segundosRestantes <= 0) {
+      clearInterval(intervalo);
+      cerrarVentana();
+    }
+  }, 1000);
+}
+
+/**
  * Muestra la página de sesión finalizada
  */
 function mostrarSesionFinalizada(): void {
@@ -514,33 +623,50 @@ function enviarNotificacionPush(titulo: string, opciones: NotificationOptions): 
  */
 async function verificarAsignacionTurno(numeroTurno: string, agenciaId: number): Promise<void> {
   console.log(`🔄 Iniciando polling para turno: ${numeroTurno} de agencia ${agenciaId}`);
-  
+
+  let asignacionMostrada = false; // Bandera para evitar mostrar asignación múltiples veces
+
   const intervalo = setInterval(async () => {
     try {
       console.log(`🔍 Consultando estado del turno ${numeroTurno} de agencia ${agenciaId}...`);
-      
+
       const response = await fetch(`/api/turnos/estado/${encodeURIComponent(numeroTurno)}?agenciaId=${agenciaId}`);
       const data: ApiResponse<{
         asignado: boolean;
+        finalizado: boolean;
+        cancelado: boolean;
+        estado: string;
         modulo?: string;
         asesor?: string;
       }> = await response.json();
-      
-      if (data.success && data.data?.asignado) {
-        // Turno asignado - detener polling
+
+      if (!data.success || !data.data) {
+        return;
+      }
+
+      // Si el turno fue cancelado, mostrar mensaje y finalizar
+      if (data.data.cancelado) {
         clearInterval(intervalo);
-        
+        console.log('❌ Turno cancelado');
+        mostrarTurnoCancelado();
+        return;
+      }
+
+      // Si el turno fue finalizado, mostrar pantalla de finalización
+      if (data.data.finalizado) {
+        clearInterval(intervalo);
+        console.log('✅ Turno finalizado');
+        mostrarSesionFinalizada();
+        return;
+      }
+
+      // Si el turno fue asignado pero no finalizado, mostrar información de asignación
+      if (data.data.asignado && !asignacionMostrada) {
+        asignacionMostrada = true; // Marcar que ya se mostró
         console.log('✅ Turno asignado:', data.data);
-        
-        // Mostrar información de asignación
+
+        // Mostrar información de asignación (NO detener polling, seguir esperando finalización)
         mostrarAsignacion(data.data.modulo!, data.data.asesor!);
-        
-        // Esperar el tiempo configurado para que el usuario vea la información antes de redirigir
-        const displayTime = ASIGNACION_DISPLAY_TIME_SECONDS * 1000; // Convertir a milisegundos
-        console.log(`⏱️ Esperando ${ASIGNACION_DISPLAY_TIME_SECONDS} segundos antes de redirigir...`);
-        setTimeout(() => {
-          mostrarSesionFinalizada();
-        }, displayTime);
       }
     } catch (error) {
       console.error('❌ Error consultando estado del turno:', error);
