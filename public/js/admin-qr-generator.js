@@ -112,7 +112,7 @@
       const token = data.data.token;
       currentAccessToken = token;
       const baseUrl = window.location.origin;
-      const qrUrl = `${baseUrl}/solicitar-turno.html?id_agencia=${agenciaId}&access=${token}`;
+      const qrUrl = `${baseUrl}/solicitar?id_agencia=${agenciaId}&access=${token}`;
       currentQrUrl = qrUrl;
       console.log("\u{1F4F1} Generando QR para agencia", agenciaId, "- URL:", qrUrl);
       const qr = qrcode(0, "M");

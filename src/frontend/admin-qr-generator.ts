@@ -192,7 +192,7 @@ async function generarNuevoQR(): Promise<void> {
 
     // Construir URL con token y agencia
     const baseUrl = window.location.origin;
-    const qrUrl = `${baseUrl}/solicitar-turno.html?id_agencia=${agenciaId}&access=${token}`;
+    const qrUrl = `${baseUrl}/solicitar?id_agencia=${agenciaId}&access=${token}`;
     currentQrUrl = qrUrl; // Guardar URL para mostrar
 
     console.log('📱 Generando QR para agencia', agenciaId, '- URL:', qrUrl);

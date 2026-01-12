@@ -1,8 +1,10 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 
-// Clave secreta para firmar tokens (debe estar en .env en producción)
-const JWT_SECRET = process.env.JWT_SECRET || 'CHANGE_THIS_SECRET_IN_PRODUCTION_' + crypto.randomBytes(32).toString('hex');
+// Claves secretas para firmar diferentes tipos de tokens (deben estar en .env)
+const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET || process.env.TURN_TOKEN_SECRET || 'CHANGE_THIS_SECRET_IN_PRODUCTION_' + crypto.randomBytes(32).toString('hex');
+const TURN_TOKEN_SECRET = process.env.TURN_TOKEN_SECRET || process.env.TURN_TOKEN_SECRET || ACCESS_TOKEN_SECRET;
+const ADMIN_TOKEN_SECRET = process.env.ADMIN_TOKEN_SECRET || process.env.TURN_TOKEN_SECRET || ACCESS_TOKEN_SECRET;
 
 // Tiempo de expiración del token en minutos
 const EXPIRATION_MINUTES = parseInt(process.env.TURNO_EXPIRATION_MINUTES || '30', 10);
@@ -36,7 +38,7 @@ export function generarTokenTurno(
     timestamp: Date.now()
   };
 
-  const token = jwt.sign(payload, JWT_SECRET, {
+  const token = jwt.sign(payload, TURN_TOKEN_SECRET, {
     expiresIn: `${EXPIRATION_MINUTES}m`,
     issuer: 'sistema-turnos',
     subject: 'turno-confirmacion'
@@ -53,7 +55,7 @@ export function generarTokenTurno(
  */
 export function verificarTokenTurno(token: string): TurnoTokenPayload | null {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET, {
+    const decoded = jwt.verify(token, TURN_TOKEN_SECRET, {
       issuer: 'sistema-turnos',
       subject: 'turno-confirmacion'
     }) as TurnoTokenPayload;
@@ -89,7 +91,7 @@ export function decodificarTokenSinVerificar(token: string): TurnoTokenPayload |
  */
 export function tokenHaExpirado(token: string): boolean {
   try {
-    jwt.verify(token, JWT_SECRET);
+    jwt.verify(token, TURN_TOKEN_SECRET);
     return false;
   } catch (error) {
     return error instanceof jwt.TokenExpiredError;
@@ -118,7 +120,7 @@ export function generarTokenAcceso(): string {
     timestamp: Date.now()
   };
 
-  const token = jwt.sign(payload, JWT_SECRET, {
+  const token = jwt.sign(payload, ACCESS_TOKEN_SECRET, {
     expiresIn: `${expirationMinutes}m`,
     issuer: 'sistema-turnos',
     subject: 'acceso-formulario'
@@ -143,7 +145,7 @@ export function generarTokenAccesoPermanente(agenciaId?: number): string {
   };
 
   // Token SIN expiresIn = token permanente (nunca expira)
-  const token = jwt.sign(payload, JWT_SECRET, {
+  const token = jwt.sign(payload, ACCESS_TOKEN_SECRET, {
     issuer: 'sistema-turnos',
     subject: 'acceso-formulario'
   });
@@ -158,7 +160,7 @@ export function generarTokenAccesoPermanente(agenciaId?: number): string {
  */
 export function verificarTokenAcceso(token: string): boolean {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET, {
+    const decoded = jwt.verify(token, ACCESS_TOKEN_SECRET, {
       issuer: 'sistema-turnos',
       subject: 'acceso-formulario'
     }) as AccesoTokenPayload;
@@ -194,7 +196,7 @@ export function generarTokenSesionAdmin(username: string): string {
     timestamp: Date.now()
   };
 
-  const token = jwt.sign(payload, JWT_SECRET, {
+  const token = jwt.sign(payload, ADMIN_TOKEN_SECRET, {
     expiresIn: '8h', // 8 horas de sesión
     issuer: 'sistema-turnos',
     subject: 'admin-session'
@@ -210,7 +212,7 @@ export function generarTokenSesionAdmin(username: string): string {
  */
 export function verificarTokenSesionAdmin(token: string): string | null {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET, {
+    const decoded = jwt.verify(token, ADMIN_TOKEN_SECRET, {
       issuer: 'sistema-turnos',
       subject: 'admin-session'
     }) as AdminSessionPayload;
