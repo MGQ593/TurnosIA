@@ -315,16 +315,24 @@
       }
       const numeroConPais = "593" + numeroLimpio;
       console.log("\u{1F50D} Validando WhatsApp para:", numeroConPais);
-      const response = await fetch(WHATSAPP_API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": WHATSAPP_API_TOKEN
-        },
-        body: JSON.stringify({
-          numbers: [numeroConPais]
-        })
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1500);
+      let response;
+      try {
+        response = await fetch(WHATSAPP_API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": WHATSAPP_API_TOKEN
+          },
+          body: JSON.stringify({
+            numbers: [numeroConPais]
+          }),
+          signal: controller.signal
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
       if (!response.ok) {
         console.warn("\u26A0\uFE0F No se pudo validar WhatsApp, continuando sin validaci\xF3n");
         return { valido: true, advertencia: true };
