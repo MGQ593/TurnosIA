@@ -418,16 +418,25 @@ async function validarWhatsApp(celular: string): Promise<WhatsAppValidationResul
 
         console.log('🔍 Validando WhatsApp para:', numeroConPais);
 
-        const response = await fetch(WHATSAPP_API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': WHATSAPP_API_TOKEN
-            },
-            body: JSON.stringify({
-                numbers: [numeroConPais]
-            })
-        });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1500);
+
+        let response: Response;
+        try {
+            response = await fetch(WHATSAPP_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': WHATSAPP_API_TOKEN
+                },
+                body: JSON.stringify({
+                    numbers: [numeroConPais]
+                }),
+                signal: controller.signal
+            });
+        } finally {
+            clearTimeout(timeoutId);
+        }
 
         if (!response.ok) {
             console.warn('⚠️ No se pudo validar WhatsApp, continuando sin validación');
@@ -745,7 +754,7 @@ form.addEventListener('submit', async function (event) {
     
     setProcessing(true);
     mostrarAlerta('Validando número de WhatsApp...', 'info');
-    
+
     const validacionWhatsApp = await validarWhatsApp(datos.celular);
     
     // Aplicar estilos visuales según el resultado de la validación
@@ -781,7 +790,7 @@ form.addEventListener('submit', async function (event) {
         
         // Llamar al API real para crear el turno
         mostrarAlerta('Creando turno...', 'info');
-        
+
         const turnoResponse = await fetch('/api/turnos/solicitar', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

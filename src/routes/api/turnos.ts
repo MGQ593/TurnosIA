@@ -267,14 +267,17 @@ router.post('/solicitar', async (req: Request, res: Response) => {
       console.log('✅ Cliente actualizado');
     }
 
-    // Crear el turno con fecha y hora automática
+    // Crear el turno y obtener la agencia en paralelo (queries independientes)
     console.log('🎫 Creando turno para agencia:', agencia_id);
-    const turno = await TurnosQueries.crear(
-      agencia_id,
-      cliente.id,
-      cliente.nombres, // Usar el nombre del cliente guardado en BD
-      datosCliente.celular
-    );
+    const [turno, agencia] = await Promise.all([
+      TurnosQueries.crear(
+        agencia_id,
+        cliente.id,
+        cliente.nombres,
+        datosCliente.celular
+      ),
+      AgenciasQueries.obtenerPorId(agencia_id)
+    ]);
     console.log('✅ Turno creado:', turno.numero_turno);
 
     // Generar código QR
@@ -282,7 +285,7 @@ router.post('/solicitar', async (req: Request, res: Response) => {
       turno_id: turno.id,
       numero_turno: turno.numero_turno,
       fecha_hora: turno.fecha_hora,
-      cliente: cliente.nombres, // Usar el nombre del cliente guardado en BD
+      cliente: cliente.nombres,
       agencia_id: turno.agencia_id
     });
 
@@ -297,13 +300,9 @@ router.post('/solicitar', async (req: Request, res: Response) => {
     });
     console.log('✅ Código QR generado');
 
-    // Obtener información de la agencia para el webhook
-    const agencia = await AgenciasQueries.obtenerPorId(agencia_id);
-    
-    // Enviar datos al webhook de n8n ANTES de responder al cliente
-    let webhookResult = null;
+    // Disparar webhook de n8n en background (fire-and-forget) — no bloquea la respuesta
     if (agencia) {
-      webhookResult = await enviarTurnoWebhook({
+      enviarTurnoWebhook({
         id_turno: turno.id,
         numero_turno: turno.numero_turno,
         cedula: datosCliente.identificacion,
@@ -311,22 +310,28 @@ router.post('/solicitar', async (req: Request, res: Response) => {
         sucursal: agencia.nombre,
         sucursal_id: agencia_id,
         fecha_hora: turno.fecha_hora,
-        whatsapp_validado: whatsapp_validado ?? false // false si no se validó
-      });
-
-      if (webhookResult.success) {
-        console.log(`✅ Notificación enviada correctamente en ${webhookResult.attempts} intento(s)`);
-      } else {
-        console.warn(`⚠️ Fallo en notificación: ${webhookResult.message}`);
-      }
+        whatsapp_validado: whatsapp_validado ?? false
+      })
+        .then(result => {
+          if (result.success) {
+            console.log(`✅ Webhook turno ${turno.numero_turno} enviado en ${result.attempts} intento(s)`);
+          } else {
+            console.error(`❌ Webhook turno ${turno.numero_turno} falló: ${result.message}`);
+          }
+        })
+        .catch(err => {
+          console.error(`❌ Webhook turno ${turno.numero_turno} excepción:`, err);
+        });
+    } else {
+      console.warn(`⚠️ Agencia ${agencia_id} no encontrada — se omite webhook para turno ${turno.numero_turno}`);
     }
 
-    // Respuesta con información del webhook
+    // Respuesta inmediata al cliente (sin esperar al webhook)
     const response: ApiResponse = {
       success: true,
       data: {
-        turno_id: turno.id, // numérico, para referencia interna
-        numero_turno: turno.numero_turno, // string, para mostrar y para token
+        turno_id: turno.id,
+        numero_turno: turno.numero_turno,
         agencia_id: turno.agencia_id,
         fecha_hora: turno.fecha_hora,
         estado: turno.estado,
@@ -335,25 +340,18 @@ router.post('/solicitar', async (req: Request, res: Response) => {
           nombre: cliente.nombres,
           identificacion: datosCliente.identificacion,
           celular: datosCliente.celular
-        },
-        notificacion: webhookResult ? {
-          enviada: webhookResult.success,
-          mensaje: webhookResult.success 
-            ? 'Recibirás notificaciones sobre tu turno' 
-            : 'Turno registrado, pero las notificaciones pueden retrasarse'
-        } : undefined
+        }
       },
-      message: webhookResult?.success 
-        ? 'Turno solicitado exitosamente. Recibirás notificaciones.' 
-        : 'Turno solicitado exitosamente.'
+      message: 'Turno solicitado exitosamente.'
     };
 
     console.log('✅ Turno procesado correctamente');
     res.status(201).json(response);
-    
+
   } catch (error) {
-    console.error('❌ Error solicitando turno:', error);
-    
+    const stack = error instanceof Error ? error.stack : undefined;
+    console.error('❌ Error solicitando turno:', error, stack ? `\nStack: ${stack}` : '');
+
     const response: ApiResponse = {
       success: false,
       message: 'Error interno del servidor al crear el turno',
